@@ -14,3 +14,17 @@ Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-mu
 
   lame
   
+## Blackhole
+
+    brew install blackhole-2ch
+
+する。
+
+で、以下のようにつなげる。
+
+    Mic -> Zoom
+    Mic -> Aggregate Device
+    Zoom -> Multi Output
+    Multi Output -> Blackhole
+    Blackhole -> Aggregate Device
+    Aggregate Device -> MeetNote
