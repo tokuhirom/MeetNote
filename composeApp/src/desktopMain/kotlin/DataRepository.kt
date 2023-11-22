@@ -1,8 +1,9 @@
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import kotlin.io.path.exists
+import kotlin.io.path.isRegularFile
 import kotlin.io.path.name
 
 class DataRepository {
@@ -38,10 +39,9 @@ class DataRepository {
             return emptyList()
         }
 
-        return dataDirectory.toFile().listFiles()?.filter {
-            it.isFile && it.name.endsWith(".md")
-        }?.map {
-            it.toPath()
-        }?.sortedByDescending { it.name } ?: emptyList()
+        return Files.walk(dataDirectory)
+            .filter { it.isRegularFile() && it.name.endsWith(".md") }
+            .sorted { p1, p2 -> p2.fileName.compareTo(p1.fileName) }
+            .toList()
     }
 }
