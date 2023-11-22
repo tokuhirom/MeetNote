@@ -8,9 +8,13 @@ import openai.OpenAICustomizedClient
 fun main() = application {
     val configRepository = ConfigRepository()
     val config = configRepository.loadSettings()
+    val dataRepository = DataRepository()
     val openAICustomizedClient = OpenAICustomizedClient(config.apiToken!!)
     val postProcessor = PostProcessor(OpenAI(config.apiToken!!), openAICustomizedClient)
-    Recorder(postProcessor).start()
+    val postProcessingResumer = PostProcessingResumer(dataRepository, postProcessor)
+    postProcessingResumer.start()
+
+    Recorder(postProcessor, dataRepository).start()
 
     Window(onCloseRequest = ::exitApplication) {
         App()

@@ -16,7 +16,7 @@ import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.DataLine
 import javax.sound.sampled.TargetDataLine
 
-class Recorder(private val postProcessor: PostProcessor) {
+class Recorder(private val postProcessor: PostProcessor, private val dataRepository: DataRepository) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     private val format = AudioFormat(16000.0f, 16, 2, true, true)
@@ -49,7 +49,7 @@ class Recorder(private val postProcessor: PostProcessor) {
     }
 
     private fun startRecording() {
-        path = getNewFilePath()
+        path = dataRepository.getNewWaveFilePath()
         logger.info("Starting recording from ${selectedMixerInfo.name}. path=$path")
 
         if (line != null) {
