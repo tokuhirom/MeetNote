@@ -23,19 +23,24 @@ Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-mu
 で、以下のようにつなげる。
 
 ```mermaid
-graph LR
-A[Mic]
-B[Zoom]
-C[Aggregate Device]
-D[Multi Output]
-E[Blackhole]
-F[MeetNote]
-
-    A --> B
-    A --> C
+graph TB
+    A[Mic]
+    B[Zoom]
+    C[Aggregate Device]
+    D[Multi Output]
+    E[Blackhole]
+    F[MeetNote]
+    G[Speaker]
+    
+    A -.-> B
+    A -.-> C
     B --> D
     D --> E
     E --> C
     C --> F
+    D --> G
+    
+    class A,G device;
+    classDef device fill:#f9d,stroke:#333,stroke-width:4px;
 ```
 
