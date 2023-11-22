@@ -67,17 +67,13 @@ class PostProcessor(private val openAI: OpenAI, private val openAICustomizedClie
 
 
     private suspend fun speechToText(mp3Path: Path): Path {
-        val txtPath = mp3Path.resolveSibling("${mp3Path.fileName.toString().dropLast(4)}.txt")
+        val txtPath = mp3Path.resolveSibling("${mp3Path.fileName.toString().dropLast(4)}.vtt")
         logger.info("Transcribing $mp3Path(${mp3Path.fileSize()} bytes) to $txtPath")
 
         val res = openAICustomizedClient.transcript(mp3Path.toFile(), "ja")
         logger.info("Writing result to $txtPath")
 
-        val originalText = res.text
-        // なぜか Whisper は無音を "ご視聴ありがとうございました" と認識するので、削除する。
-        // その他、なんかしらんけどよくわからん文言が先頭にくることがあるので調整。
-        val removedText = originalText.replaceFirst(Regex("^((ご視聴ありがとうございました|焦げつけなさい|おつかりなさい|いただきます) ?)+"), "")
-        txtPath.writeText(removedText)
+        txtPath.writeText(res)
         return txtPath
     }
 
