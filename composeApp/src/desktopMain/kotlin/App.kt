@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
+import org.slf4j.LoggerFactory
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import javax.sound.sampled.AudioSystem
@@ -27,11 +28,16 @@ import kotlin.io.path.readText
 
 @Composable
 fun App(dataRepository: DataRepository) {
+    val logger = LoggerFactory.getLogger("App")
+
     MaterialTheme {
         var logs by remember { mutableStateOf(dataRepository.getRecentSummarizedFiles()) }
 
         val executor = Executors.newScheduledThreadPool(1)
-        executor.schedule({ logs = dataRepository.getRecentSummarizedFiles() }, 10, TimeUnit.SECONDS)
+        executor.scheduleAtFixedRate({
+            logger.info("Loading recent summarized files")
+            logs = dataRepository.getRecentSummarizedFiles()
+         }, 0, 10, TimeUnit.SECONDS)
 
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             LazyColumn(modifier = Modifier.weight(1f)) {
