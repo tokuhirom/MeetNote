@@ -29,7 +29,7 @@ class DataRepository {
         } ?: emptyList()
     }
 
-    private fun getDataDirectory() : Path {
+    fun getDataDirectory() : Path {
         return Paths.get(System.getProperty("user.home")).resolve("MeetNote")
     }
 

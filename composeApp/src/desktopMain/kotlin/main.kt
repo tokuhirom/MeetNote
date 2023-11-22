@@ -13,9 +13,11 @@ fun main() = application {
     val postProcessingResumer = PostProcessingResumer(dataRepository, postProcessor)
     postProcessingResumer.start()
 
+    val mainApp = MainApp(dataRepository)
+
     Recorder(postProcessor, dataRepository).start()
 
     Window(onCloseRequest = ::exitApplication, title = "MeetNote", state = rememberWindowState()) {
-        App(dataRepository)
+        mainApp.App()
     }
 }
