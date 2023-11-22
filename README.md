@@ -22,9 +22,20 @@ Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-mu
 
 で、以下のようにつなげる。
 
-    Mic -> Zoom
-    Mic -> Aggregate Device
-    Zoom -> Multi Output
-    Multi Output -> Blackhole
-    Blackhole -> Aggregate Device
-    Aggregate Device -> MeetNote
+```mermaid
+graph LR
+A[Mic]
+B[Zoom]
+C[Aggregate Device]
+D[Multi Output]
+E[Blackhole]
+F[MeetNote]
+
+    A --> B
+    A --> C
+    B --> D
+    D --> E
+    E --> C
+    C --> F
+```
+
