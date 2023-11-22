@@ -2,6 +2,9 @@
 
 Complete Zoom recording, transcription, and summarization all at once
 
+ * Record zoom voice automatically
+ * Transcribe the voice
+ * Summarize the transcription
 
 ## Supported platforms
 
