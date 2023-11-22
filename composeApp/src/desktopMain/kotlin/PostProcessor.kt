@@ -72,7 +72,12 @@ class PostProcessor(private val openAI: OpenAI, private val openAICustomizedClie
 
         val res = openAICustomizedClient.transcript(mp3Path.toFile(), "ja")
         logger.info("Writing result to $txtPath")
-        txtPath.writeText(res.text)
+
+        val originalText = res.text
+        // なぜか Whisper は無音を "ご視聴ありがとうございました" と認識するので、削除する。
+        // その他、なんかしらんけどよくわからん文言が先頭にくることがあるので調整。
+        val removedText = originalText.replaceFirst(Regex("^((ご視聴ありがとうございました|焦げつけなさい|おつかりなさい|いただきます) ?)+"), "")
+        txtPath.writeText(removedText)
         return txtPath
     }
 
