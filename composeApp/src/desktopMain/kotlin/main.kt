@@ -2,6 +2,7 @@ import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberWindowState
 import com.aallam.openai.client.OpenAI
 import openai.OpenAICustomizedClient
 
@@ -16,13 +17,7 @@ fun main() = application {
 
     Recorder(postProcessor, dataRepository).start()
 
-    Window(onCloseRequest = ::exitApplication) {
-        App()
+    Window(onCloseRequest = ::exitApplication, title = "MeetNote", state = rememberWindowState()) {
+        App(dataRepository)
     }
-}
-
-@Preview
-@Composable
-fun AppDesktopPreview() {
-    App()
 }

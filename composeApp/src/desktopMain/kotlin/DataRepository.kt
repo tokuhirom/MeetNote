@@ -27,7 +27,20 @@ class DataRepository {
         } ?: emptyList()
     }
 
-    fun getDataDirectory() : Path {
+    private fun getDataDirectory() : Path {
         return Paths.get(System.getProperty("user.home")).resolve("MeetNote")
+    }
+
+    fun getRecentSummarizedFiles(): List<Path> {
+        val dataDirectory = getDataDirectory()
+        if (!dataDirectory.toFile().exists()) {
+            return emptyList()
+        }
+
+        return dataDirectory.toFile().listFiles()?.filter {
+            it.isFile && it.name.endsWith(".md")
+        }?.map {
+            it.toPath()
+        } ?: emptyList()
     }
 }
