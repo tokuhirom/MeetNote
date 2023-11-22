@@ -50,6 +50,8 @@ class Recorder(private val postProcessor: PostProcessor, private val dataReposit
 
     private fun startRecording() {
         path = dataRepository.getNewWaveFilePath()
+
+        // TODO notice を出したい。
         logger.info("Starting recording from ${selectedMixerInfo.name}. path=$path")
 
         if (line != null) {
