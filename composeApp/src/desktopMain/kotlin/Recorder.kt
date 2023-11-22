@@ -130,8 +130,12 @@ class Recorder(
     }
 
     fun setMixer(mixerInfo: Mixer.Info) {
-        stopRecording()
-        selectedMixer = mixerInfo
-        startRecording()
+        if (inRecording()) {
+            stopRecording()
+            selectedMixer = mixerInfo
+            startRecording()
+        } else {
+            selectedMixer = mixerInfo
+        }
     }
 }

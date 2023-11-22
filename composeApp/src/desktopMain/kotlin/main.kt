@@ -65,7 +65,7 @@ fun main() = application {
                 AudioSystem.getMixer(it).targetLineInfo.isNotEmpty()
             }.forEach { mixerInfo ->
                 // Note: RadioButtonItem is not available on desktop
-                Item(if (mixerInfo.name == recorder.selectedMixer.name) {
+                Item(if (mixerInfo.name == selectedMixer.name) {
                     "✔"
                 } else {
                     "  "
@@ -73,6 +73,7 @@ fun main() = application {
                 ) {
                     println("Selected mixer: $mixerInfo")
                     recorder.setMixer(mixerInfo)
+                    selectedMixer = mixerInfo
                 }
             }
 
