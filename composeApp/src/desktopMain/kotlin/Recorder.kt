@@ -10,6 +10,7 @@ import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.DataLine
+import javax.sound.sampled.Mixer
 import javax.sound.sampled.TargetDataLine
 
 class Recorder(
@@ -22,10 +23,9 @@ class Recorder(
 
     private val availableMixers = AudioSystem.getMixerInfo()
 
-    private val selectedMixerInfo = availableMixers.first {
+    var selectedMixer: Mixer.Info = availableMixers.firstOrNull {
         it.name.equals("Aggregate Device")
-    }
-    private val selectedMixer = AudioSystem.getMixer(selectedMixerInfo)
+    } ?: availableMixers.first()
     private val dataLineInfo = DataLine.Info(TargetDataLine::class.java, format)
 
     private val recordingControllerExecutor = Executors.newSingleThreadExecutor()
@@ -41,14 +41,13 @@ class Recorder(
         path = dataRepository.getNewWaveFilePath()
 
         // TODO notice を出したい。
-        logger.info("Starting recording from ${selectedMixerInfo.name}. path=$path")
+        logger.info("Starting recording from ${selectedMixer.name}. path=$path")
 
         if (line != null) {
             throw IllegalStateException("line is already initialized")
         }
         startedAt = Instant.now()
-        line = selectedMixer.getLine(dataLineInfo) as TargetDataLine
-
+        line = AudioSystem.getMixer(selectedMixer).getLine(dataLineInfo) as TargetDataLine
         line!!.open(format)
         line!!.start()
         recordingWriterExecutor.submit {
@@ -128,5 +127,11 @@ class Recorder(
         val now = Instant.now()
 
         return Duration.ofSeconds(now.epochSecond - startedAt!!.epochSecond) > maxRecordingDuration
+    }
+
+    fun setMixer(mixerInfo: Mixer.Info) {
+        stopRecording()
+        selectedMixer = mixerInfo
+        startRecording()
     }
 }

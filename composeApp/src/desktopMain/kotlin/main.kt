@@ -15,6 +15,7 @@ import com.aallam.openai.client.OpenAI
 import kotlinx.coroutines.runBlocking
 import openai.OpenAICustomizedClient
 import java.util.concurrent.Executors
+import javax.sound.sampled.AudioSystem
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() = application {
@@ -31,7 +32,7 @@ fun main() = application {
 
     var isRecording by remember { mutableStateOf(false) }
 
-    Recorder(dataRepository, onStartRecording = {
+    val recorder = Recorder(dataRepository, onStartRecording = {
         isRecording = true
     }
     ) { targetPath ->
@@ -42,7 +43,8 @@ fun main() = application {
                 postProcessor.process(targetPath)
             }
         }
-    }.start()
+    }
+    recorder.start()
 
     Tray(
         icon = TrayIcon(
@@ -52,6 +54,30 @@ fun main() = application {
         menu = {
             Item("MeetNote") {
             }
+
+            Separator()
+
+            var selectedMixer by remember { mutableStateOf(recorder.selectedMixer) }
+
+            AudioSystem.getMixerInfo().filter {
+                // targetLine=Output, Speaker
+                // sourceLine=Input, Microphone
+                AudioSystem.getMixer(it).targetLineInfo.isNotEmpty()
+            }.forEach { mixerInfo ->
+                // Note: RadioButtonItem is not available on desktop
+                Item(if (mixerInfo.name == recorder.selectedMixer.name) {
+                    "✔"
+                } else {
+                    "  "
+                } + mixerInfo.name
+                ) {
+                    println("Selected mixer: $mixerInfo")
+                    recorder.setMixer(mixerInfo)
+                }
+            }
+
+            Separator()
+
             Item("Exit") {
                 exitApplication()
             }
