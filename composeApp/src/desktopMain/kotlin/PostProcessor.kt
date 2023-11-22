@@ -17,12 +17,6 @@ class PostProcessor(private val openAI: OpenAI, private val openAICustomizedClie
     suspend fun process(wavePath: Path) {
         logger.info("Starting post-processing: $wavePath")
 
-        if (wavePath.fileSize() < 1000 * 1000) {
-            logger.error("File size is too small: ${wavePath.fileSize()} bytes")
-            wavePath.toFile().delete()
-            return
-        }
-
         val mp3Path = convertToMp3(wavePath)
 
         val txtFilePath = speechToText(mp3Path)

@@ -1,9 +1,22 @@
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.aallam.openai.client.OpenAI
+import kotlinx.coroutines.runBlocking
 import openai.OpenAICustomizedClient
+import java.util.concurrent.Executors
 
+@OptIn(ExperimentalComposeUiApi::class)
 fun main() = application {
     val configRepository = ConfigRepository()
     val config = configRepository.loadSettings()
@@ -12,12 +25,48 @@ fun main() = application {
     val postProcessor = PostProcessor(OpenAI(config.apiToken!!), openAICustomizedClient)
     val postProcessingResumer = PostProcessingResumer(dataRepository, postProcessor)
     postProcessingResumer.start()
+    val postProcessExecutor = Executors.newSingleThreadExecutor()
 
     val mainApp = MainApp(dataRepository)
 
-    Recorder(postProcessor, dataRepository).start()
+    var isRecording by remember { mutableStateOf(false) }
+
+    Recorder(dataRepository, onStartRecording = {
+        isRecording = true
+    }
+    ) { targetPath ->
+        isRecording = false
+
+        postProcessExecutor.submit {
+            runBlocking {
+                postProcessor.process(targetPath)
+            }
+        }
+    }.start()
+
+    Tray(
+        icon = TrayIcon(
+            if (isRecording) { Color(0xFFFF0000) }
+            else { Color.Gray }
+        ),
+        menu = {
+            Item("MeetNote") {
+            }
+            Item("Exit") {
+                exitApplication()
+            }
+        }
+    )
 
     Window(onCloseRequest = ::exitApplication, title = "MeetNote", state = rememberWindowState()) {
         mainApp.App()
+    }
+}
+
+class TrayIcon(private val color: Color) : Painter() {
+    override val intrinsicSize = Size(256f, 256f)
+
+    override fun DrawScope.onDraw() {
+        drawOval(color)
     }
 }

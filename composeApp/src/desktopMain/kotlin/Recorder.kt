@@ -1,13 +1,9 @@
-import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.time.Duration
 import java.time.Instant
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.concurrent.Executors
 import javax.sound.sampled.AudioFileFormat
 import javax.sound.sampled.AudioFormat
@@ -16,37 +12,30 @@ import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.DataLine
 import javax.sound.sampled.TargetDataLine
 
-class Recorder(private val postProcessor: PostProcessor, private val dataRepository: DataRepository) {
+class Recorder(
+    private val dataRepository: DataRepository, private val onStartRecording: (Path) -> Unit = {},
+    private val onStopRecording: (Path) -> Unit
+) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     private val format = AudioFormat(16000.0f, 16, 2, true, true)
 
     private val availableMixers = AudioSystem.getMixerInfo()
 
-    private val selectedMixerInfo = availableMixers.filter {
+    private val selectedMixerInfo = availableMixers.first {
         it.name.equals("Aggregate Device")
-    }.first()
+    }
     private val selectedMixer = AudioSystem.getMixer(selectedMixerInfo)
     private val dataLineInfo = DataLine.Info(TargetDataLine::class.java, format)
 
     private val recordingControllerExecutor = Executors.newSingleThreadExecutor()
     private val recordingWriterExecutor = Executors.newSingleThreadExecutor()
-    private val postProcessExecutor = Executors.newSingleThreadExecutor()
 
     private val maxRecordingDuration = Duration.ofMinutes(30)
 
     private var startedAt : Instant? = null
     private var line : TargetDataLine? = null
     private var path: Path? = null
-
-    private fun getNewFilePath(): Path {
-        val currentDateTime = LocalDateTime.now()
-        val formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
-        val formattedDateTime = currentDateTime.format(formatter)
-        val path = Paths.get(System.getProperty("user.home")).resolve("MeetNote").resolve("$formattedDateTime.wav")
-        path.parent.toFile().mkdirs()
-        return path
-    }
 
     private fun startRecording() {
         path = dataRepository.getNewWaveFilePath()
@@ -66,6 +55,8 @@ class Recorder(private val postProcessor: PostProcessor, private val dataReposit
             val out = AudioSystem.write(AudioInputStream(line), AudioFileFormat.Type.WAVE, path!!.toFile())
             println("Wrote $path: $out bytes")
         }
+
+        onStartRecording(path!!)
     }
 
     private fun inRecording() : Boolean {
@@ -130,11 +121,7 @@ class Recorder(private val postProcessor: PostProcessor, private val dataReposit
         startedAt = null
         val targetPath = path!!.toAbsolutePath()
 
-        postProcessExecutor.submit {
-            runBlocking {
-                postProcessor.process(targetPath)
-            }
-        }
+        onStopRecording(targetPath)
     }
 
     private fun longerThanMaxRecordingDuration(): Boolean {

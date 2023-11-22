@@ -19,6 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
@@ -33,6 +34,8 @@ import kotlin.io.path.deleteIfExists
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.name
 import kotlin.io.path.readText
+import androidx.compose.ui.window.Tray
+import java.awt.SystemTray
 
 data class LogEntry(val path: Path, val content: String)
 
@@ -53,7 +56,6 @@ class MainApp(private val dataRepository: DataRepository) {
 
             LaunchedEffect(Unit) {
                 while(true) {
-                    logger.info("Waiting for watch service event")
                     logs = loadLogs()
                     delay(1000)
                 }
