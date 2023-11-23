@@ -1,7 +1,9 @@
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -16,7 +18,9 @@ import openai.OpenAICustomizedClient
 import java.util.concurrent.Executors
 import javax.sound.sampled.AudioSystem
 
-fun main() {
+fun main() = application {
+    println("Start application...")
+
     val configRepository = ConfigRepository()
     val config = configRepository.loadSettings()
     val dataRepository = DataRepository()
@@ -32,8 +36,8 @@ fun main() {
 
     val recorder = Recorder(dataRepository,
         onStartRecording = {
-            isRecording = true
-        }) { targetPath ->
+        isRecording = true
+    }) { targetPath ->
         isRecording = false
 
         postProcessExecutor.submit {
@@ -43,62 +47,57 @@ fun main() {
         }
     }
 
-    Thread({
+    LaunchedEffect(Unit) {
+        println("Starting HighCpuUsageRecorderController...")
         val recorderController = HighCpuUsageRecorderController(
             recorder,
             "/Applications/zoom.us.app/Contents/MacOS/zoom.us",
             10.0,
         )
         recorderController.start()
-    }, "RecorderController").start()
+    }
 
-    application {
-        Tray(
-            icon = TrayIcon(
-                if (isRecording) {
-                    Color(0xFFFF0000)
+    Tray(
+        icon = TrayIcon(
+            if (isRecording) { Color(0xFFFF0000) }
+            else { Color.Gray }
+        ),
+        menu = {
+            Item("MeetNote") {
+            }
+
+            Separator()
+
+            var selectedMixer by remember { mutableStateOf(recorder.selectedMixer) }
+
+            AudioSystem.getMixerInfo().filter {
+                // targetLine=Output, Speaker
+                // sourceLine=Input, Microphone
+                AudioSystem.getMixer(it).targetLineInfo.isNotEmpty()
+            }.forEach { mixerInfo ->
+                // Note: RadioButtonItem is not available on desktop
+                Item(if (mixerInfo.name == selectedMixer.name) {
+                    "✔"
                 } else {
-                    Color.Gray
-                }
-            ),
-            menu = {
-                Item("MeetNote") {
-                }
-
-                Separator()
-
-                var selectedMixer by remember { mutableStateOf(recorder.selectedMixer) }
-
-                AudioSystem.getMixerInfo().filter {
-                    // targetLine=Output, Speaker
-                    // sourceLine=Input, Microphone
-                    AudioSystem.getMixer(it).targetLineInfo.isNotEmpty()
-                }.forEach { mixerInfo ->
-                    // Note: RadioButtonItem is not available on desktop
-                    Item(
-                        if (mixerInfo.name == selectedMixer.name) {
-                            "✔"
-                        } else {
-                            "  "
-                        } + mixerInfo.name
-                    ) {
-                        println("Selected mixer: $mixerInfo")
-                        recorder.setMixer(mixerInfo)
-                        selectedMixer = mixerInfo
-                    }
-                }
-
-                Separator()
-
-                Item("Exit") {
-                    exitApplication()
+                    "  "
+                } + mixerInfo.name
+                ) {
+                    println("Selected mixer: $mixerInfo")
+                    recorder.setMixer(mixerInfo)
+                    selectedMixer = mixerInfo
                 }
             }
-        )
 
-        Window(onCloseRequest = ::exitApplication, title = "MeetNote", state = rememberWindowState()) {
-            mainApp.App()
+            Separator()
+
+            Item("Exit") {
+                exitApplication()
+            }
         }
+    )
+
+    Window(onCloseRequest = ::exitApplication, title = "MeetNote", state = rememberWindowState()) {
+        mainApp.App()
     }
 }
 

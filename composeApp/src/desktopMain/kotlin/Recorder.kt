@@ -70,7 +70,6 @@ class Recorder(
     }
 
     fun inRecording() : Boolean {
-        logger.info("BEGIN: inRecording")
         return recordingState != null
     }
 

@@ -40,6 +40,7 @@ import java.awt.SystemTray
 data class LogEntry(val path: Path, val content: String)
 
 class MainApp(private val dataRepository: DataRepository) {
+    val logger = LoggerFactory.getLogger(javaClass)
 
     private fun loadLogs(): List<LogEntry> {
         return dataRepository.getRecentSummarizedFiles().map {
@@ -49,10 +50,9 @@ class MainApp(private val dataRepository: DataRepository) {
 
     @Composable
     fun App() {
-        val logger = LoggerFactory.getLogger("App")
-
         MaterialTheme {
             var logs by remember { mutableStateOf(loadLogs()) }
+            logger.info("Starting App!!")
 
             LaunchedEffect(Unit) {
                 while(true) {
