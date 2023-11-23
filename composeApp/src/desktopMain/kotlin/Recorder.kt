@@ -12,6 +12,11 @@ import javax.sound.sampled.Mixer
 import javax.sound.sampled.TargetDataLine
 
 
+data class RecordingState(
+    val line: TargetDataLine,
+    val path: Path,
+    val startedAt: Instant = Instant.now()
+)
 
 class Recorder(
     private val dataRepository: DataRepository,
@@ -31,14 +36,12 @@ class Recorder(
 
     private val recordingWriterExecutor = Executors.newSingleThreadExecutor()
 
-    private var startedAt : Instant? = null
-    private var line : TargetDataLine? = null
-    private var path: Path? = null
+    private var recordingState: RecordingState? = null
 
     fun recordingDuration(): Duration {
         val now = Instant.now()
 
-        return Duration.ofMillis(now.toEpochMilli() - startedAt!!.toEpochMilli())
+        return Duration.ofMillis(now.toEpochMilli() - recordingState!!.startedAt.toEpochMilli())
     }
 
     fun startRecording() {
@@ -46,40 +49,40 @@ class Recorder(
             stopRecording()
         }
 
-        path = dataRepository.getNewWaveFilePath()
+        val path = dataRepository.getNewWaveFilePath()
 
         // TODO notice を出したい。
         logger.info("Starting recording from ${selectedMixer.name}. path=$path")
 
-        if (line != null) {
-            throw IllegalStateException("line is already initialized")
-        }
-        startedAt = Instant.now()
-        line = AudioSystem.getMixer(selectedMixer).getLine(dataLineInfo) as TargetDataLine
-        line!!.open(format)
-        line!!.start()
+        val line = AudioSystem.getMixer(selectedMixer).getLine(dataLineInfo) as TargetDataLine
+        line.open(format)
+        line.start()
+
+        recordingState = RecordingState(line, path)
         recordingWriterExecutor.submit {
             val out = AudioSystem.write(AudioInputStream(line), AudioFileFormat.Type.WAVE, path!!.toFile())
             println("Wrote $path: $out bytes")
         }
 
-        onStartRecording(path!!)
+        onStartRecording(path)
     }
 
     fun inRecording() : Boolean {
-        return line != null && startedAt != null && path != null
+        return recordingState != null
     }
 
     fun stopRecording() {
-        logger.info("Stop recording: $path")
-        line!!.stop();
-        line!!.close();
-        line = null
-        startedAt = null
-        val targetPath = path!!.toAbsolutePath()
+        logger.info("Stop recording: $recordingState")
+        val state = recordingState
+        if (state != null) {
+            state.line.stop();
+            state.line.close();
 
-        onStopRecording(targetPath)
-        path = null
+            val targetPath = state.path.toAbsolutePath()
+            onStopRecording(targetPath)
+
+            recordingState = null
+        }
     }
 
     fun setMixer(mixerInfo: Mixer.Info) {

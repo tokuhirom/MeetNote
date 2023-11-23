@@ -23,6 +23,8 @@ class HighCpuUsageRecorderController(
                         // 録音を終了する
                         recorder.stopRecording()
                     } else if (recorder.recordingDuration() > maxRecordingDuration) {
+                        logger.info("Recording duration exceeds the limit. Stopping recording.")
+
                         // 規定時間を超過したので、一旦 close する。
                         recorder.stopRecording()
 
@@ -31,7 +33,8 @@ class HighCpuUsageRecorderController(
                     }
                 } else { // not recording
                     if (shouldRecording()) {
-                        // 録音を開始する
+                        logger.info("High CPU usage detected. Starting recording...")
+
                         recorder.startRecording()
                     }
                 }
