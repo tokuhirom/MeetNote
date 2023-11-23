@@ -20,12 +20,13 @@ data class RecordingState(
 
 class Recorder(
     private val dataRepository: DataRepository,
-    private val onStartRecording: (Path) -> Unit = {},
-    private val onStopRecording: (Path) -> Unit
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     private val format = AudioFormat(16000.0f, 16, 2, true, true)
+
+    lateinit var onStartRecording: (Path) -> Unit
+    lateinit var onStopRecording: (Path) -> Unit
 
     private val availableMixers = AudioSystem.getMixerInfo()
 

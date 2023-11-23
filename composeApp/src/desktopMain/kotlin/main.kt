@@ -18,7 +18,7 @@ import openai.OpenAICustomizedClient
 import java.util.concurrent.Executors
 import javax.sound.sampled.AudioSystem
 
-fun main() = application {
+fun main() {
     println("Start application...")
 
     val configRepository = ConfigRepository()
@@ -31,73 +31,83 @@ fun main() = application {
     val postProcessExecutor = Executors.newSingleThreadExecutor()
 
     val mainApp = MainApp(dataRepository)
+    val recorder = Recorder(dataRepository)
 
-    var isRecording by remember { mutableStateOf(false) }
+    application {
+        var isRecording by remember { mutableStateOf(false) }
 
-    val recorder = Recorder(dataRepository,
-        onStartRecording = {
-        isRecording = true
-    }) { targetPath ->
-        isRecording = false
-
-        postProcessExecutor.submit {
-            runBlocking {
-                postProcessor.process(targetPath)
-            }
+        recorder.onStartRecording = {
+            isRecording = true
         }
-    }
+        recorder.onStopRecording = {targetPath ->
+            isRecording = false
 
-    LaunchedEffect(Unit) {
-        println("Starting HighCpuUsageRecorderController...")
-        val recorderController = HighCpuUsageRecorderController(
-            recorder,
-            "/Applications/zoom.us.app/Contents/MacOS/zoom.us",
-            10.0,
-        )
-        recorderController.start()
-    }
-
-    Tray(
-        icon = TrayIcon(
-            if (isRecording) { Color(0xFFFF0000) }
-            else { Color.Gray }
-        ),
-        menu = {
-            Item("MeetNote") {
-            }
-
-            Separator()
-
-            var selectedMixer by remember { mutableStateOf(recorder.selectedMixer) }
-
-            AudioSystem.getMixerInfo().filter {
-                // targetLine=Output, Speaker
-                // sourceLine=Input, Microphone
-                AudioSystem.getMixer(it).targetLineInfo.isNotEmpty()
-            }.forEach { mixerInfo ->
-                // Note: RadioButtonItem is not available on desktop
-                Item(if (mixerInfo.name == selectedMixer.name) {
-                    "✔"
-                } else {
-                    "  "
-                } + mixerInfo.name
-                ) {
-                    println("Selected mixer: $mixerInfo")
-                    recorder.setMixer(mixerInfo)
-                    selectedMixer = mixerInfo
+            postProcessExecutor.submit {
+                runBlocking {
+                    postProcessor.process(targetPath)
                 }
             }
-
-            Separator()
-
-            Item("Exit") {
-                exitApplication()
-            }
         }
-    )
 
-    Window(onCloseRequest = ::exitApplication, title = "MeetNote", state = rememberWindowState()) {
-        mainApp.App()
+        Tray(
+            icon = TrayIcon(
+                if (isRecording) {
+                    Color(0xFFFF0000)
+                } else {
+                    Color.Gray
+                }
+            ),
+            menu = {
+                Item("MeetNote") {
+                }
+
+                Separator()
+
+                var selectedMixer by remember { mutableStateOf(recorder.selectedMixer) }
+
+                AudioSystem.getMixerInfo().filter {
+                    // targetLine=Output, Speaker
+                    // sourceLine=Input, Microphone
+                    AudioSystem.getMixer(it).targetLineInfo.isNotEmpty()
+                }.forEach { mixerInfo ->
+                    // Note: RadioButtonItem is not available on desktop
+                    Item(
+                        if (mixerInfo.name == selectedMixer.name) {
+                            "✔"
+                        } else {
+                            "  "
+                        } + mixerInfo.name
+                    ) {
+                        println("Selected mixer: $mixerInfo")
+                        recorder.setMixer(mixerInfo)
+                        selectedMixer = mixerInfo
+                    }
+                }
+
+                Separator()
+
+                Item("Exit") {
+                    exitApplication()
+                }
+            }
+        )
+
+        Window(onCloseRequest = ::exitApplication, title = "MeetNote", state = rememberWindowState()) {
+            LaunchedEffect(Unit) {
+                Thread {
+                    println("Starting HighCpuUsageRecorderController...")
+
+                    val recorderController = HighCpuUsageRecorderController(
+                        recorder,
+                        "/Applications/zoom.us.app/Contents/MacOS/zoom.us",
+                        10.0,
+                    )
+                    recorderController.start()
+                }.start()
+            }
+
+            mainApp.App()
+        }
     }
 }
 
