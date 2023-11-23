@@ -1,6 +1,4 @@
 import org.slf4j.LoggerFactory
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
@@ -13,8 +11,11 @@ import javax.sound.sampled.DataLine
 import javax.sound.sampled.Mixer
 import javax.sound.sampled.TargetDataLine
 
+
+
 class Recorder(
-    private val dataRepository: DataRepository, private val onStartRecording: (Path) -> Unit = {},
+    private val dataRepository: DataRepository,
+    private val onStartRecording: (Path) -> Unit = {},
     private val onStopRecording: (Path) -> Unit
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -28,16 +29,23 @@ class Recorder(
     } ?: availableMixers.first()
     private val dataLineInfo = DataLine.Info(TargetDataLine::class.java, format)
 
-    private val recordingControllerExecutor = Executors.newSingleThreadExecutor()
     private val recordingWriterExecutor = Executors.newSingleThreadExecutor()
-
-    private val maxRecordingDuration = Duration.ofMinutes(30)
 
     private var startedAt : Instant? = null
     private var line : TargetDataLine? = null
     private var path: Path? = null
 
-    private fun startRecording() {
+    fun recordingDuration(): Duration {
+        val now = Instant.now()
+
+        return Duration.ofMillis(now.toEpochMilli() - startedAt!!.toEpochMilli())
+    }
+
+    fun startRecording() {
+        if (inRecording()) {
+            stopRecording()
+        }
+
         path = dataRepository.getNewWaveFilePath()
 
         // TODO notice を出したい。
@@ -58,62 +66,12 @@ class Recorder(
         onStartRecording(path!!)
     }
 
-    private fun inRecording() : Boolean {
+    fun inRecording() : Boolean {
         return line != null && startedAt != null && path != null
     }
 
-    fun start() {
-        recordingControllerExecutor.submit {
-            // 録音時間が規定時間を経過するか、Zoom ウィンドウが閉じるまで録音を続ける
-            while (true) {
-                try {
-                    if (inRecording()) { // in recording
-                        if (!inMeeting()) {
-                            // 録音を終了する
-                            stopRecording()
-                        } else if (longerThanMaxRecordingDuration()) {
-                            // 規定時間を超過したので、一旦 close する。
-                            stopRecording()
-
-                            // そして再度録音を開始する。
-                            startRecording()
-                        }
-                    } else { // not recording
-                        if (inMeeting()) {
-                            // 録音を開始する
-                            startRecording()
-                        }
-                    }
-                } catch (e: Exception) {
-                    logger.error("Error in recording: $e", e)
-                }
-
-                Thread.sleep(1000)
-            }
-        }
-    }
-
-    private fun inMeeting(): Boolean {
-        val cpuUsage = getZoomCpuUsage()
-        return cpuUsage != null && cpuUsage > 10.0
-    }
-
-    private fun getZoomCpuUsage(): Double? {
-        val processBuilder = ProcessBuilder("ps", "aux")
-        val process = processBuilder.start()
-        val reader = BufferedReader(InputStreamReader(process.inputStream))
-        reader.useLines { lines ->
-            lines.forEach { line ->
-                if (line.contains("/Applications/zoom.us.app/Contents/MacOS/zoom.us")) {
-                    return line.split("\\s+".toRegex())[2].toDoubleOrNull()
-                }
-            }
-        }
-
-        return null
-    }
-
-    private fun stopRecording() {
+    fun stopRecording() {
+        logger.info("Stop recording: $path")
         line!!.stop();
         line!!.close();
         line = null
@@ -121,12 +79,7 @@ class Recorder(
         val targetPath = path!!.toAbsolutePath()
 
         onStopRecording(targetPath)
-    }
-
-    private fun longerThanMaxRecordingDuration(): Boolean {
-        val now = Instant.now()
-
-        return Duration.ofSeconds(now.epochSecond - startedAt!!.epochSecond) > maxRecordingDuration
+        path = null
     }
 
     fun setMixer(mixerInfo: Mixer.Info) {

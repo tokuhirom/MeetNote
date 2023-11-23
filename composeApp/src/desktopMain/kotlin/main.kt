@@ -17,7 +17,6 @@ import openai.OpenAICustomizedClient
 import java.util.concurrent.Executors
 import javax.sound.sampled.AudioSystem
 
-@OptIn(ExperimentalComposeUiApi::class)
 fun main() = application {
     val configRepository = ConfigRepository()
     val config = configRepository.loadSettings()
@@ -32,10 +31,10 @@ fun main() = application {
 
     var isRecording by remember { mutableStateOf(false) }
 
-    val recorder = Recorder(dataRepository, onStartRecording = {
+    val recorder = Recorder(dataRepository,
+        onStartRecording = {
         isRecording = true
-    }
-    ) { targetPath ->
+    }) { targetPath ->
         isRecording = false
 
         postProcessExecutor.submit {
@@ -44,7 +43,15 @@ fun main() = application {
             }
         }
     }
-    recorder.start()
+
+    Thread( {
+        val recorderController = HighCpuUsageRecorderController(
+            recorder,
+            "/Applications/zoom.us.app/Contents/MacOS/zoom.us",
+            10.0,
+        )
+        recorderController.start()
+    }, "RecorderController").start()
 
     Tray(
         icon = TrayIcon(

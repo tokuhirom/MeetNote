@@ -1,0 +1,3 @@
+interface RecorderController {
+    fun start()
+}
