@@ -33,9 +33,10 @@ class HighCpuUsageRecorderController(
                     }
                 } else { // not recording
                     if (shouldRecording()) {
-                        logger.info("High CPU usage detected. Starting recording...")
-
-                        recorder.startRecording()
+                        if (!recorder.inRecording()) {
+                            logger.info("High CPU usage detected. Starting recording...")
+                            recorder.startRecording()
+                        }
                     }
                 }
             } catch (e: Exception) {

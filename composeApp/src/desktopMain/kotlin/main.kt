@@ -14,10 +14,11 @@ import androidx.compose.ui.window.rememberWindowState
 import com.aallam.openai.client.OpenAI
 import kotlinx.coroutines.runBlocking
 import openai.OpenAICustomizedClient
+import java.awt.TrayIcon
 import java.util.concurrent.Executors
 import javax.sound.sampled.AudioSystem
 
-fun main() = application {
+fun main() {
     val configRepository = ConfigRepository()
     val config = configRepository.loadSettings()
     val dataRepository = DataRepository()
@@ -33,8 +34,8 @@ fun main() = application {
 
     val recorder = Recorder(dataRepository,
         onStartRecording = {
-        isRecording = true
-    }) { targetPath ->
+            isRecording = true
+        }) { targetPath ->
         isRecording = false
 
         postProcessExecutor.submit {
@@ -44,7 +45,7 @@ fun main() = application {
         }
     }
 
-    Thread( {
+    Thread({
         val recorderController = HighCpuUsageRecorderController(
             recorder,
             "/Applications/zoom.us.app/Contents/MacOS/zoom.us",
@@ -53,47 +54,53 @@ fun main() = application {
         recorderController.start()
     }, "RecorderController").start()
 
-    Tray(
-        icon = TrayIcon(
-            if (isRecording) { Color(0xFFFF0000) }
-            else { Color.Gray }
-        ),
-        menu = {
-            Item("MeetNote") {
-            }
-
-            Separator()
-
-            var selectedMixer by remember { mutableStateOf(recorder.selectedMixer) }
-
-            AudioSystem.getMixerInfo().filter {
-                // targetLine=Output, Speaker
-                // sourceLine=Input, Microphone
-                AudioSystem.getMixer(it).targetLineInfo.isNotEmpty()
-            }.forEach { mixerInfo ->
-                // Note: RadioButtonItem is not available on desktop
-                Item(if (mixerInfo.name == selectedMixer.name) {
-                    "✔"
+    application {
+        Tray(
+            icon = TrayIcon(
+                if (isRecording) {
+                    Color(0xFFFF0000)
                 } else {
-                    "  "
-                } + mixerInfo.name
-                ) {
-                    println("Selected mixer: $mixerInfo")
-                    recorder.setMixer(mixerInfo)
-                    selectedMixer = mixerInfo
+                    Color.Gray
+                }
+            ),
+            menu = {
+                Item("MeetNote") {
+                }
+
+                Separator()
+
+                var selectedMixer by remember { mutableStateOf(recorder.selectedMixer) }
+
+                AudioSystem.getMixerInfo().filter {
+                    // targetLine=Output, Speaker
+                    // sourceLine=Input, Microphone
+                    AudioSystem.getMixer(it).targetLineInfo.isNotEmpty()
+                }.forEach { mixerInfo ->
+                    // Note: RadioButtonItem is not available on desktop
+                    Item(
+                        if (mixerInfo.name == selectedMixer.name) {
+                            "✔"
+                        } else {
+                            "  "
+                        } + mixerInfo.name
+                    ) {
+                        println("Selected mixer: $mixerInfo")
+                        recorder.setMixer(mixerInfo)
+                        selectedMixer = mixerInfo
+                    }
+                }
+
+                Separator()
+
+                Item("Exit") {
+                    exitApplication()
                 }
             }
+        )
 
-            Separator()
-
-            Item("Exit") {
-                exitApplication()
-            }
+        Window(onCloseRequest = ::exitApplication, title = "MeetNote", state = rememberWindowState()) {
+            mainApp.App()
         }
-    )
-
-    Window(onCloseRequest = ::exitApplication, title = "MeetNote", state = rememberWindowState()) {
-        mainApp.App()
     }
 }
 

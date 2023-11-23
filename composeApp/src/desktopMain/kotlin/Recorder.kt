@@ -45,6 +45,7 @@ class Recorder(
     }
 
     fun startRecording() {
+        logger.info("BEGIN: startRecording")
         if (inRecording()) {
             stopRecording()
         }
@@ -65,9 +66,11 @@ class Recorder(
         }
 
         onStartRecording(path)
+        logger.info("END: startRecording")
     }
 
     fun inRecording() : Boolean {
+        logger.info("BEGIN: inRecording")
         return recordingState != null
     }
 
