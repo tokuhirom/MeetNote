@@ -26,18 +26,15 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.nio.file.WatchKey
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.name
 import kotlin.io.path.readText
-import androidx.compose.ui.window.Tray
-import java.awt.SystemTray
 
 data class LogEntry(val path: Path, val content: String)
 
 class MainApp(private val dataRepository: DataRepository) {
-    val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     private fun loadLogs(): List<LogEntry> {
         return dataRepository.getRecentSummarizedFiles().map {
