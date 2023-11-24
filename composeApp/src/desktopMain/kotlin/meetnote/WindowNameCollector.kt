@@ -41,7 +41,7 @@ end tell
         """.trimIndent()
 
         val pb = ProcessBuilder("osascript", "-e", script)
-        pb.redirectError()
+        pb.redirectError(ProcessBuilder.Redirect.INHERIT)
         val p = pb.start()
 
         val lines = BufferedReader(InputStreamReader(p.inputStream)).use { reader ->
