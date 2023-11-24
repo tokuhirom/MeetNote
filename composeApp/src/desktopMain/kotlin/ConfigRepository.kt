@@ -1,3 +1,4 @@
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonMapperBuilder
 import com.fasterxml.jackson.module.kotlin.readValue
 import java.nio.file.Files
@@ -10,10 +11,12 @@ import kotlin.io.path.notExists
 import kotlin.io.path.writeText
 
 class ConfigRepository {
-    private val objectMapper = jacksonMapperBuilder().build()
+    private val objectMapper = jacksonMapperBuilder()
+        .addModule(JavaTimeModule())
+        .build()
 
     // 設定を保存する
-    fun saveSettings(config: Config, path: Path = configPath()) {
+    fun saveConfiguration(config: Config, path: Path = configPath()) {
         val jsonData = objectMapper.writeValueAsString(config)
 
         if (path.parent.notExists()) {
