@@ -2,20 +2,20 @@
 
 ![MeetNote](icon.png)
 
-Complete Zoom recording, transcription, and summarization all at once
+Streamline your online meetings by integrating recording, transcription, and summarization into a single process. MeetNote offers you the ability to:
 
- * Record zoom voice automatically
- * Transcribe the voice
- * Summarize the transcription
+* Auto-record voices from your online meetings
+* Transcribe the recorded voice into accessible text
+* Summarize the transcriptions for a quick review
 
 ## Supported platforms
 
-  * Mac OS Ventura or later
-  * Java 17+
+* Mac OS Ventura or later
+* Java 17+
 
-## Permission
+## Permissions
 
-This application requires "Accessibility" permission to get the list of windows.
+To get the list of windows, this application requires the "Accessibility" permission.
 
 ## Dependencies
 
@@ -23,26 +23,26 @@ This application requires "Accessibility" permission to get the list of windows.
 
     brew install lame
 
-音声ファイルを mp3 にするために lame を利用する。
-  
+Lame is utilized for converting voice files to mp3.
+
 ### Blackhole
 
-音声とマイクを両方録音するために以下のようにして BlackHole を入れる。
+Install BlackHole to record both voice and microphone. To do so, run:
 
     brew install blackhole-2ch
 
-で、以下のようにつなげる。
+And set them up as:
 
 ```mermaid
 graph TB
     A[Mic]
-    B[Zoom]
+    B[Online Meeting]
     C[Aggregate Device]
     D[Multi Output]
     E[Blackhole]
     F[MeetNote]
     G[Speaker]
-    
+
     A -.-> B
     A -.-> C
     B --> D
@@ -50,16 +50,18 @@ graph TB
     E --> C
     C --> F
     D --> G
-    
+
     class A,G device;
     classDef device fill:#f9d,stroke:#333,stroke-width:4px;
 ```
 
 ## Build
 
+Build the app by running the following command:
+
     ./gradlew packageDmg
 
-## License
+## User License
 
 The MIT License (MIT)
 
