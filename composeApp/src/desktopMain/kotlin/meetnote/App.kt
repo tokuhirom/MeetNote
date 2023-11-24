@@ -38,7 +38,19 @@ import kotlin.io.path.isRegularFile
 import kotlin.io.path.name
 import kotlin.io.path.readText
 
-data class LogEntry(val path: Path, val content: String)
+data class LogEntry(val path: Path, val content: String) {
+    fun title(): String {
+        val inputFileName = path.name
+
+        val datePart = inputFileName.substring(0, 8)  // "20230102"
+        val timePart = inputFileName.substring(8, 12)  // "0304"
+
+        val formattedDate = datePart.replaceRange(4, 4, "-").replaceRange(7, 7, "-")
+        val formattedTime = timePart.replaceRange(2, 2, ":")
+
+        return "$formattedDate $formattedTime"
+    }
+}
 
 class MainApp(private val dataRepository: DataRepository) {
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -108,7 +120,7 @@ class MainApp(private val dataRepository: DataRepository) {
                             }
 
                             Row {
-                                Text(log.path.name)
+                                Text(log.title())
 
                                 Spacer(modifier = Modifier.weight(1f))
 
