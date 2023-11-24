@@ -53,8 +53,8 @@ class Recorder(
 
         val path = dataRepository.getNewWaveFilePath()
 
-        // TODO notice を出したい。
         logger.info("Starting recording from ${selectedMixer.name}. path=$path")
+        NotificationSender.sendMessage("Starting recording from ${selectedMixer.name}. path=$path")
 
         val line = AudioSystem.getMixer(selectedMixer).getLine(dataLineInfo) as TargetDataLine
         line.open(format)
@@ -76,6 +76,8 @@ class Recorder(
 
     fun stopRecording() {
         logger.info("Stop recording: $recordingState")
+        NotificationSender.sendMessage("Stop recording: $recordingState")
+
         val state = recordingState
         if (state != null) {
             state.line.stop();
