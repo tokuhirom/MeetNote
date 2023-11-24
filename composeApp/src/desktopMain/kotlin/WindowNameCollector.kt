@@ -14,7 +14,7 @@ class WindowNameCollector {
 
     private fun parseWindowState(input: String): WindowState {
         // Regex pattern for matching the input string.
-        val pattern = """Process: (.*), PID: (.*), Bundle ID: (.*), Window: (.*)""".toRegex()
+        val pattern = """Process: (.*?), PID: (.*?), Bundle ID: (.*?), Window: (.*?)""".toRegex(RegexOption.DOT_MATCHES_ALL)
 
         // Try to find a match in the input string.
         val matchResult = pattern.matchEntire(input)

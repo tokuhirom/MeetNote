@@ -53,6 +53,8 @@ class MainApp(private val dataRepository: DataRepository) {
 
             LaunchedEffect(Unit) {
                 while(true) {
+                    // ここを自動ロードじゃなくしたい。
+                    // inotify?
                     logs = loadLogs()
                     delay(1000)
                 }
@@ -71,7 +73,7 @@ class MainApp(private val dataRepository: DataRepository) {
                             if (isConfirmDialogOpen) {
                                 AlertDialog(
                                     onDismissRequest = { isConfirmDialogOpen = false },
-                                    title = { "Delete Confirmation" },
+                                    title = { Text("Delete Confirmation") },
                                     text = { Text("Are you sure you want to delete ${log.path.name}?") },
                                     confirmButton = {
                                         TextButton(
@@ -126,7 +128,7 @@ class MainApp(private val dataRepository: DataRepository) {
         }
     }
 
-    fun deleteFileWithSameNameVtt(file: File) {
+    private fun deleteFileWithSameNameVtt(file: File) {
         val vttFilePath = file.absolutePath.replace(".md", ".vtt")
         val vttFile = Paths.get(vttFilePath)
         vttFile.deleteIfExists()
