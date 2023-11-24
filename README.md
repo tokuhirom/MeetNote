@@ -11,6 +11,10 @@ Complete Zoom recording, transcription, and summarization all at once
   * Mac OS Ventura or later
   * Java 17+
 
+## Permission
+
+This application requires "Accessibility" permission to get the list of windows.
+
 ## Dependencies
 
 ### Lame

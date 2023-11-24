@@ -1,4 +1,4 @@
-
+package meetnote
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -17,7 +17,6 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.aallam.openai.client.OpenAI
 import kotlinx.coroutines.runBlocking
-import openai.OpenAICustomizedClient
 import java.util.concurrent.Executors
 import javax.sound.sampled.AudioSystem
 

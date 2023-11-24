@@ -1,9 +1,10 @@
+package meetnote
+
 import com.aallam.openai.api.chat.ChatRole
 import com.aallam.openai.api.chat.chatCompletionRequest
 import com.aallam.openai.api.chat.chatMessage
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.client.OpenAI
-import openai.OpenAICustomizedClient
 import org.slf4j.LoggerFactory
 import java.io.InputStreamReader
 import java.nio.file.Path

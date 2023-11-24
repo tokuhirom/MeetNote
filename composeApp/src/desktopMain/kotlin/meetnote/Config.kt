@@ -1,3 +1,5 @@
+package meetnote
+
 import java.time.Duration
 
 data class Config(

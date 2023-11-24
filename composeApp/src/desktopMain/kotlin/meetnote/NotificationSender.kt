@@ -1,3 +1,5 @@
+package meetnote
+
 import org.slf4j.LoggerFactory
 
 object NotificationSender {
