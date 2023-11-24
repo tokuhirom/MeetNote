@@ -1,3 +1,4 @@
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonMapperBuilder
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -13,6 +14,7 @@ import kotlin.io.path.writeText
 class ConfigRepository {
     private val objectMapper = jacksonMapperBuilder()
         .addModule(JavaTimeModule())
+        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
         .build()
 
     // 設定を保存する

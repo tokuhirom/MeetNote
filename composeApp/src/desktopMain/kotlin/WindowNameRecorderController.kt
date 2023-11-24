@@ -1,13 +1,13 @@
 import org.slf4j.LoggerFactory
 import java.time.Duration
 
-data class WindowNamePattern(var bundleId: String, var windowName: String)
+data class WindowPattern(var bundleId: String, var windowName: String)
 
 class WindowNameRecorderController(
     private val recorder: Recorder,
     private val windowNameCollector: WindowNameCollector,
-    private val windowNamePatterns: List<WindowNamePattern>,
-    private val sleepInterval: Duration,
+    private val windowPatterns: List<WindowPattern>,
+    private val watchInterval: Duration,
     private val maxRecordingDuration: Duration = Duration.ofMinutes(30),
 ) : RecorderController {
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -17,7 +17,7 @@ class WindowNameRecorderController(
             try {
                 val matchedWindowList = windowNameCollector.getWindowStateList()
                     .filter {
-                        windowNamePatterns.any { pattern ->
+                        windowPatterns.any { pattern ->
                             it.bundleId == pattern.bundleId && it.windowName == pattern.windowName
                         }
                     }
@@ -45,7 +45,7 @@ class WindowNameRecorderController(
                 logger.error("Error in recording: $e", e)
             }
 
-            Thread.sleep(sleepInterval.toMillis())
+            Thread.sleep(watchInterval.toMillis())
         }
     }
 }

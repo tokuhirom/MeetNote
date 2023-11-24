@@ -64,15 +64,13 @@ fun configurationDialog(configRepository: ConfigRepository, onClose: () -> Unit)
                     var maxRecordingDurationIsError by remember { mutableStateOf(false) }
 
                     TextField(
-                        value = config.recorderControllerConfig.maxRecordingDuration.toMinutes().toString(),
+                        value = config.maxRecordingDuration.toMinutes().toString(),
                         onValueChange = { value ->
                             logger.info("Updating maxRecordingDuration: $value")
                             val longValue = value.toLongOrNull()
                             if (longValue != null) {
                                 config = config.copy(
-                                    recorderControllerConfig = config.recorderControllerConfig.copy(
-                                        maxRecordingDuration = Duration.ofMinutes(longValue)
-                                    )
+                                    maxRecordingDuration = Duration.ofMinutes(longValue)
                                 )
                                 maxRecordingDurationIsError = false
                             } else {
@@ -94,14 +92,14 @@ fun configurationDialog(configRepository: ConfigRepository, onClose: () -> Unit)
                     var sleepIntervalIsError by remember { mutableStateOf(false) }
 
                     TextField(
-                        value = config.recorderControllerConfig.sleepInterval.toSeconds().toString(),
+                        value = config.windowWatchConfig.watchInterval.toSeconds().toString(),
                         onValueChange = { value ->
                             logger.info("Updating sleep Interval: $value")
                             val longValue = value.toLongOrNull()
                             if (longValue != null) {
                                 config = config.copy(
-                                    recorderControllerConfig = config.recorderControllerConfig.copy(
-                                        sleepInterval = Duration.ofSeconds(longValue)
+                                    windowWatchConfig = config.windowWatchConfig.copy(
+                                        watchInterval = Duration.ofSeconds(longValue)
                                     )
                                 )
                                 sleepIntervalIsError = false
@@ -123,9 +121,9 @@ fun configurationDialog(configRepository: ConfigRepository, onClose: () -> Unit)
                         Button(
                             onClick = {
                                 config = config.copy(
-                                    recorderControllerConfig = config.recorderControllerConfig.copy(
-                                        windowNamePatterns = config.recorderControllerConfig.windowNamePatterns +
-                                                WindowNamePattern("com.example", "Great new window")
+                                    windowWatchConfig = config.windowWatchConfig.copy(
+                                        windowPatterns = config.windowWatchConfig.windowPatterns +
+                                                WindowPattern("com.example", "Great new window")
                                     )
                                 )
                             },
@@ -136,14 +134,14 @@ fun configurationDialog(configRepository: ConfigRepository, onClose: () -> Unit)
 
                     Box(modifier = Modifier.padding(top = 10.dp)) {
                         LazyColumn {
-                            items(config.recorderControllerConfig.windowNamePatterns) { windowNamePattern ->
+                            items(config.windowWatchConfig.windowPatterns) { windowNamePattern ->
                                 Row {
                                     TextField(
                                         value = windowNamePattern.bundleId,
                                         onValueChange = {value ->
                                             config = config.copy(
-                                                recorderControllerConfig = config.recorderControllerConfig.copy(
-                                                    windowNamePatterns = config.recorderControllerConfig.windowNamePatterns.map {
+                                                windowWatchConfig = config.windowWatchConfig.copy(
+                                                    windowPatterns = config.windowWatchConfig.windowPatterns.map {
                                                         if (it == windowNamePattern) {
                                                             it.copy(bundleId = value)
                                                         } else {
@@ -163,8 +161,8 @@ fun configurationDialog(configRepository: ConfigRepository, onClose: () -> Unit)
                                         value = windowNamePattern.windowName,
                                         onValueChange = {value ->
                                             config = config.copy(
-                                                recorderControllerConfig = config.recorderControllerConfig.copy(
-                                                    windowNamePatterns = config.recorderControllerConfig.windowNamePatterns.map {
+                                                windowWatchConfig = config.windowWatchConfig.copy(
+                                                    windowPatterns = config.windowWatchConfig.windowPatterns.map {
                                                         if (it == windowNamePattern) {
                                                             it.copy(windowName = value)
                                                         } else {
@@ -183,8 +181,8 @@ fun configurationDialog(configRepository: ConfigRepository, onClose: () -> Unit)
                                     Button(
                                         onClick = {
                                             config = config.copy(
-                                                recorderControllerConfig = config.recorderControllerConfig.copy(
-                                                    windowNamePatterns = config.recorderControllerConfig.windowNamePatterns.filterNot {
+                                                windowWatchConfig = config.windowWatchConfig.copy(
+                                                    windowPatterns = config.windowWatchConfig.windowPatterns.filterNot {
                                                         it == windowNamePattern
                                                     }
                                                 )

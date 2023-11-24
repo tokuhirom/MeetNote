@@ -28,7 +28,7 @@ class PostProcessor(private val openAI: OpenAI, private val openAICustomizedClie
     private fun cleanup(wavePath: Path, mp3Path: Path) {
         logger.info("Removing used files: $wavePath, $mp3Path")
         wavePath.toFile().delete()
-        mp3Path.toFile().delete()
+//        mp3Path.toFile().delete()
     }
 
     private fun convertToMp3(wavePath: Path): Path {
@@ -37,7 +37,8 @@ class PostProcessor(private val openAI: OpenAI, private val openAICustomizedClie
         logger.info("Converting $wavePath(${wavePath.fileSize()} bytes) to mp3")
 
         try {
-            val processBuilder = ProcessBuilder("lame", "--verbose", "-b", "64", "-m", "m", wavePath.toString(), mp3Path.toString())
+            // --abr: average bitrate
+            val processBuilder = ProcessBuilder("lame", "--verbose", "-v", "--abr", "58", "-m", "m", wavePath.toString(), mp3Path.toString())
             processBuilder.redirectErrorStream(true)
             val process = processBuilder.start()
             val reader = InputStreamReader(process.inputStream)

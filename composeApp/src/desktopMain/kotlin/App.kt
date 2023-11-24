@@ -157,6 +157,7 @@ class MainApp(private val dataRepository: DataRepository) {
 
         Thread {
             while (true) {
+                // TODO ignore files that are not .md
                 val key = watchService.take()
                 key.pollEvents()
                 // Directory has changed, call the callback

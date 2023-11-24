@@ -1,3 +1,4 @@
+
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -17,7 +18,6 @@ import androidx.compose.ui.window.rememberWindowState
 import com.aallam.openai.client.OpenAI
 import kotlinx.coroutines.runBlocking
 import openai.OpenAICustomizedClient
-import java.time.Duration
 import java.util.concurrent.Executors
 import javax.sound.sampled.AudioSystem
 
@@ -109,11 +109,9 @@ fun main() {
                     WindowNameRecorderController(
                         recorder,
                         windowNameCollector,
-                        listOf(
-                            WindowNamePattern("us.zoom.xos", "Zoom Meeting"),
-                        ),
-                        Duration.ofSeconds(1),
-                        Duration.ofMinutes(30),
+                        config.windowWatchConfig.windowPatterns,
+                        watchInterval = config.windowWatchConfig.watchInterval,
+                        maxRecordingDuration = config.maxRecordingDuration,
                     ).start()
                 }.start()
             }
