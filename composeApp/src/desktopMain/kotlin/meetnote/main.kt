@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyShortcut
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
@@ -97,7 +98,10 @@ fun main() {
             }
         )
 
-        Window(onCloseRequest = ::exitApplication, title = "MeetNote", state = rememberWindowState()) {
+        Window(onCloseRequest = ::exitApplication,
+            title = "MeetNote",
+            state = rememberWindowState(),
+            icon = painterResource("icons/icon.png")) {
             var showWindowListDialog by remember { mutableStateOf(false) }
             var showConfigurationDialog by remember { mutableStateOf(configRepository.loadSettings().apiToken.isNullOrBlank()) }
 
