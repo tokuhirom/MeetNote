@@ -46,8 +46,19 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "meet.note"
+
+            modules("java.naming")
+            modules("java.instrument")
+            modules("java.management")
+            modules("java.sql")
+            modules("jdk.unsupported")
+
+            packageName = "MeetNote"
             packageVersion = "1.0.0"
+
+            macOS {
+                iconFile.set(project.file("src/desktopMain/resources/icon.icns"))
+            }
         }
     }
 }
