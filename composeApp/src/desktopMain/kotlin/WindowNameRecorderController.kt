@@ -1,7 +1,7 @@
 import org.slf4j.LoggerFactory
 import java.time.Duration
 
-data class WindowNamePattern(val bundleId: String, val windowName: String)
+data class WindowNamePattern(var bundleId: String, var windowName: String)
 
 class WindowNameRecorderController(
     private val recorder: Recorder,
