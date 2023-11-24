@@ -11,7 +11,11 @@ import kotlin.io.path.fileSize
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
-class PostProcessor(private val openAI: OpenAI, private val openAICustomizedClient: OpenAICustomizedClient) {
+class PostProcessor(
+    private val openAI: OpenAI,
+    private val openAICustomizedClient: OpenAICustomizedClient,
+    private val mp3bitRate: Int
+) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     suspend fun process(wavePath: Path) {
@@ -34,11 +38,11 @@ class PostProcessor(private val openAI: OpenAI, private val openAICustomizedClie
     private fun convertToMp3(wavePath: Path): Path {
         val mp3Path = wavePath.resolveSibling("${wavePath.fileName.toString().dropLast(4)}.mp3")
 
-        logger.info("Converting $wavePath(${wavePath.fileSize()} bytes) to mp3")
+        logger.info("Converting $wavePath(${wavePath.fileSize()} bytes) to mp3. bitrate: $mp3bitRate")
 
         try {
             // --abr: average bitrate
-            val processBuilder = ProcessBuilder("lame", "--verbose", "-v", "--abr", "58", "-m", "m", wavePath.toString(), mp3Path.toString())
+            val processBuilder = ProcessBuilder("lame", "--verbose", "-v", "--abr", mp3bitRate.toString(), "-m", "m", wavePath.toString(), mp3Path.toString())
             processBuilder.redirectErrorStream(true)
             val process = processBuilder.start()
             val reader = InputStreamReader(process.inputStream)

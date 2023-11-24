@@ -27,6 +27,7 @@ import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.rememberDialogState
 import org.slf4j.LoggerFactory
 import java.time.Duration
+import javax.swing.JOptionPane
 
 @Composable
 fun configurationDialog(configRepository: ConfigRepository, onClose: () -> Unit) {
@@ -38,10 +39,10 @@ fun configurationDialog(configRepository: ConfigRepository, onClose: () -> Unit)
         resizable = true,
         state = rememberDialogState(width = 800.dp, height = 600.dp)
     ) {
-        Column(modifier = Modifier.padding(8.dp)) {
+        Column(modifier = Modifier.padding(4.dp)) {
             var config by remember { mutableStateOf(configRepository.loadSettings()) }
 
-            Box(modifier = Modifier.padding(10.dp).border(1.dp, Color.Gray)) {
+            Box(modifier = Modifier.padding(bottom=10.dp).border(1.dp, Color.Gray)) {
                 Column(modifier = Modifier.padding(10.dp)) {
                     Text("OpenAI Configuration", fontSize = TextUnit(1.5f, TextUnitType.Em))
                     TextField(
@@ -52,7 +53,7 @@ fun configurationDialog(configRepository: ConfigRepository, onClose: () -> Unit)
                 }
             }
 
-            Box(modifier = Modifier.padding(10.dp).border(1.dp, Color.Gray)) {
+            Box(modifier = Modifier.padding(bottom = 10.dp).border(1.dp, Color.Gray)) {
                 Column(modifier = Modifier.padding(10.dp)) {
                     Text("Recording Configuration", fontSize = TextUnit(1.5f, TextUnitType.Em))
 
@@ -61,31 +62,55 @@ fun configurationDialog(configRepository: ConfigRepository, onClose: () -> Unit)
                         If you see an error related to this, please lower the max recording duration or bit rate.
                         """.trimIndent(), color = Color.Gray)
 
-                    var maxRecordingDurationIsError by remember { mutableStateOf(false) }
-
-                    TextField(
-                        value = config.maxRecordingDuration.toMinutes().toString(),
-                        onValueChange = { value ->
-                            logger.info("Updating maxRecordingDuration: $value")
-                            val longValue = value.toLongOrNull()
-                            if (longValue != null) {
-                                config = config.copy(
-                                    maxRecordingDuration = Duration.ofMinutes(longValue)
-                                )
-                                maxRecordingDurationIsError = false
-                            } else {
-                                maxRecordingDurationIsError = true
+                    Row {
+                        var maxRecordingDurationIsError by remember { mutableStateOf(false) }
+                        TextField(
+                            value = config.maxRecordingDuration.toMinutes().toString(),
+                            onValueChange = { value ->
+                                logger.info("Updating maxRecordingDuration: $value")
+                                val longValue = value.toLongOrNull()
+                                if (longValue != null) {
+                                    config = config.copy(
+                                        maxRecordingDuration = Duration.ofMinutes(longValue)
+                                    )
+                                    maxRecordingDurationIsError = false
+                                } else {
+                                    maxRecordingDurationIsError = true
+                                }
+                            },
+                            isError = maxRecordingDurationIsError,
+                            label = {
+                                Text("Max recording duration [min]")
                             }
-                        },
-                        isError = maxRecordingDurationIsError,
-                        label = {
-                            Text("Max recording duration [min]")
-                        }
-                    )
+                        )
+
+                        Spacer(Modifier.width(4.dp))
+
+                        var mp3bitRateIsError by remember { mutableStateOf(false) }
+                        TextField(
+                            value = config.mp3bitRate.toString(),
+                            onValueChange = { value ->
+                                logger.info("Updating mp3bitRate: $value")
+                                val intValue = value.toIntOrNull()
+                                if (intValue != null) {
+                                    config = config.copy(
+                                        mp3bitRate = intValue
+                                    )
+                                    mp3bitRateIsError = false
+                                } else {
+                                    mp3bitRateIsError = true
+                                }
+                            },
+                            isError = mp3bitRateIsError,
+                            label = {
+                                Text("MP3 bit rate")
+                            }
+                        )
+                    }
                 }
             }
 
-            Box(modifier = Modifier.padding(10.dp).border(1.dp, Color.Gray)) {
+            Box(modifier = Modifier.padding(bottom = 10.dp).border(1.dp, Color.Gray)) {
                 Column(modifier = Modifier.padding(10.dp)) {
                     Text("Window watcher configuration", fontSize = TextUnit(1.5f, TextUnitType.Em))
 
@@ -204,6 +229,13 @@ fun configurationDialog(configRepository: ConfigRepository, onClose: () -> Unit)
                 Button(
                     onClick = {
                         configRepository.saveConfiguration(config)
+
+                        JOptionPane.showMessageDialog(
+                            null,
+                            "Configuration have been updated. Reboot the application, please.",
+                            "Configuration Update",
+                            JOptionPane.INFORMATION_MESSAGE
+                        )
                         onClose()
                     }
                 ) {

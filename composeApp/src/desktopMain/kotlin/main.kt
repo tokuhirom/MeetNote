@@ -29,7 +29,7 @@ fun main() {
     val config = configRepository.loadSettings()
     val dataRepository = DataRepository()
     val openAICustomizedClient = OpenAICustomizedClient(config.apiToken!!)
-    val postProcessor = PostProcessor(OpenAI(config.apiToken!!), openAICustomizedClient)
+    val postProcessor = PostProcessor(OpenAI(config.apiToken!!), openAICustomizedClient, config.mp3bitRate)
     val postProcessingResumer = PostProcessingResumer(dataRepository, postProcessor)
     postProcessingResumer.start()
     val postProcessExecutor = Executors.newSingleThreadExecutor()
