@@ -130,7 +130,7 @@ fun main() {
                 }
             }
 
-            mainApp.App()
+            mainApp.app()
 
             MenuBar {
                 this.Menu("Misc") {

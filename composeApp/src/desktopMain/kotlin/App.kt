@@ -13,19 +13,24 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.nio.file.FileSystems
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.nio.file.StandardWatchEventKinds
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.name
@@ -43,17 +48,25 @@ class MainApp(private val dataRepository: DataRepository) {
     }
 
     @Composable
-    fun App() {
+    fun app() {
         MaterialTheme {
             var logs by remember { mutableStateOf(loadLogs()) }
             logger.info("Starting App!!")
 
-            LaunchedEffect(Unit) {
-                while(true) {
-                    // ここを自動ロードじゃなくしたい。
-                    // inotify?
-                    logs = loadLogs()
-                    delay(1000)
+            val job = rememberCoroutineScope().launch(Dispatchers.IO) {
+                val path = dataRepository.getDataDirectory()
+                CoroutineScope(Dispatchers.IO).launch {
+                    startFileWatcher(path) {
+                        logger.info("File changed. Reloading logs...")
+                        logs = loadLogs()
+                    }
+                }
+            }
+
+            DisposableEffect(Unit) {
+                onDispose {
+                    logger.info("Stop watching file changes.")
+                    job.cancel()
                 }
             }
 
@@ -130,5 +143,26 @@ class MainApp(private val dataRepository: DataRepository) {
         val vttFile = Paths.get(vttFilePath)
         vttFile.deleteIfExists()
         file.delete()
+    }
+
+    private fun startFileWatcher(path: Path, callback: () -> Unit) {
+        val watchService = FileSystems.getDefault().newWatchService()
+
+        path.register(
+            watchService,
+            StandardWatchEventKinds.ENTRY_CREATE,
+            StandardWatchEventKinds.ENTRY_MODIFY,
+            StandardWatchEventKinds.ENTRY_DELETE
+        )
+
+        Thread {
+            while (true) {
+                val key = watchService.take()
+                key.pollEvents()
+                // Directory has changed, call the callback
+                callback()
+                key.reset()
+            }
+        }.start()
     }
 }
