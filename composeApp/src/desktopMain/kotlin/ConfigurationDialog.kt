@@ -1,4 +1,5 @@
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.Divider
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
@@ -18,6 +20,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.rememberDialogState
@@ -37,9 +41,9 @@ fun configurationDialog(configRepository: ConfigRepository, onClose: () -> Unit)
         Column(modifier = Modifier.padding(8.dp)) {
             var config by remember { mutableStateOf(configRepository.loadSettings()) }
 
-            Box(modifier = Modifier.padding(bottom = 10.dp)) {
-                Column {
-                    Text("OpenAI Configuration")
+            Box(modifier = Modifier.padding(10.dp).border(1.dp, Color.Gray)) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Text("OpenAI Configuration", fontSize = TextUnit(1.5f, TextUnitType.Em))
                     TextField(
                         value = config.apiToken ?: "",
                         onValueChange = { config = config.copy(apiToken = it) },
@@ -48,20 +52,86 @@ fun configurationDialog(configRepository: ConfigRepository, onClose: () -> Unit)
                 }
             }
 
-            Box(modifier = Modifier.padding(bottom = 10.dp)) {
-                Column {
-                    Text("Recorder Controller Configurations")
-                    Button(
-                        onClick = {
-                            config = config.copy(
-                                recorderControllerConfig = config.recorderControllerConfig.copy(
-                                    windowNamePatterns = config.recorderControllerConfig.windowNamePatterns +
-                                            WindowNamePattern("com.example", "Great new window")
+            Box(modifier = Modifier.padding(10.dp).border(1.dp, Color.Gray)) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Text("Recording Configuration", fontSize = TextUnit(1.5f, TextUnitType.Em))
+
+                    Text("""
+                        Please note: OpenAI's API does not support audio files larger than 25MB.
+                        If you see an error related to this, please lower the max recording duration or bit rate.
+                        """.trimIndent(), color = Color.Gray)
+
+                    var maxRecordingDurationIsError by remember { mutableStateOf(false) }
+
+                    TextField(
+                        value = config.recorderControllerConfig.maxRecordingDuration.toMinutes().toString(),
+                        onValueChange = { value ->
+                            logger.info("Updating maxRecordingDuration: $value")
+                            val longValue = value.toLongOrNull()
+                            if (longValue != null) {
+                                config = config.copy(
+                                    recorderControllerConfig = config.recorderControllerConfig.copy(
+                                        maxRecordingDuration = Duration.ofMinutes(longValue)
+                                    )
                                 )
-                            )
+                                maxRecordingDurationIsError = false
+                            } else {
+                                maxRecordingDurationIsError = true
+                            }
                         },
-                    ) {
-                        Text("Add")
+                        isError = maxRecordingDurationIsError,
+                        label = {
+                            Text("Max recording duration [min]")
+                        }
+                    )
+                }
+            }
+
+            Box(modifier = Modifier.padding(10.dp).border(1.dp, Color.Gray)) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Text("Window watcher configuration", fontSize = TextUnit(1.5f, TextUnitType.Em))
+
+                    var sleepIntervalIsError by remember { mutableStateOf(false) }
+
+                    TextField(
+                        value = config.recorderControllerConfig.sleepInterval.toSeconds().toString(),
+                        onValueChange = { value ->
+                            logger.info("Updating sleep Interval: $value")
+                            val longValue = value.toLongOrNull()
+                            if (longValue != null) {
+                                config = config.copy(
+                                    recorderControllerConfig = config.recorderControllerConfig.copy(
+                                        sleepInterval = Duration.ofSeconds(longValue)
+                                    )
+                                )
+                                sleepIntervalIsError = false
+                            } else {
+                                sleepIntervalIsError = true
+                            }
+                        },
+                        isError = sleepIntervalIsError,
+                        label = { Text("Window watch Interval [sec])") }
+                    )
+
+                    Divider(modifier = Modifier.padding(top = 10.dp, bottom = 10.dp))
+
+                    Row {
+                        Text("Window watching rule")
+
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        Button(
+                            onClick = {
+                                config = config.copy(
+                                    recorderControllerConfig = config.recorderControllerConfig.copy(
+                                        windowNamePatterns = config.recorderControllerConfig.windowNamePatterns +
+                                                WindowNamePattern("com.example", "Great new window")
+                                    )
+                                )
+                            },
+                        ) {
+                            Text("Add")
+                        }
                     }
 
                     Box(modifier = Modifier.padding(top = 10.dp)) {
@@ -128,66 +198,18 @@ fun configurationDialog(configRepository: ConfigRepository, onClose: () -> Unit)
                             }
                         }
                     }
+                }
+            }
 
-                    var sleepIntervalIsError by remember { mutableStateOf(false) }
 
-                    TextField(
-                        value = config.recorderControllerConfig.sleepInterval.toSeconds().toString(),
-                        onValueChange = { value ->
-                            logger.info("Updating sleep Interval: $value")
-                            val longValue = value.toLongOrNull()
-                            if (longValue != null) {
-                                config = config.copy(
-                                    recorderControllerConfig = config.recorderControllerConfig.copy(
-                                        sleepInterval = Duration.ofSeconds(longValue)
-                                    )
-                                )
-                                sleepIntervalIsError = false
-                            } else {
-                                sleepIntervalIsError = true
-                            }
-                        },
-                        isError = sleepIntervalIsError,
-                        label = { Text("Sleep Interval [sec])") }
-                    )
-
-                    var maxRecordingDurationIsError by remember { mutableStateOf(false) }
-
-                    TextField(
-                        value = config.recorderControllerConfig.maxRecordingDuration.toMinutes().toString(),
-                        onValueChange = { value ->
-                            logger.info("Updating maxRecordingDuration: $value")
-                            val longValue = value.toLongOrNull()
-                            if (longValue != null) {
-                                config = config.copy(
-                                    recorderControllerConfig = config.recorderControllerConfig.copy(
-                                        maxRecordingDuration = Duration.ofMinutes(longValue)
-                                    )
-                                )
-                                maxRecordingDurationIsError = false
-                            } else {
-                                maxRecordingDurationIsError = true
-                            }
-                        },
-                        isError = maxRecordingDurationIsError,
-                        label = {
-                            Text(
-                                "Max recording duration [min]\n(MP3 file size limit is 25MB..\nIf OpenAPI returns " +
-                                        "an error, you need to decrease this value.)"
-                            )
-                        }
-                    )
-
-                    Box(modifier = Modifier.padding(top = 10.dp)) {
-                        Button(
-                            onClick = {
-                                configRepository.saveConfiguration(config)
-                                onClose()
-                            }
-                        ) {
-                            Text("Save")
-                        }
+            Box(modifier = Modifier.padding(top = 10.dp)) {
+                Button(
+                    onClick = {
+                        configRepository.saveConfiguration(config)
+                        onClose()
                     }
+                ) {
+                    Text("Save")
                 }
             }
         }
