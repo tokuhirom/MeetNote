@@ -19,16 +19,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.nio.file.FileSystems
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.nio.file.WatchEvent
 import java.nio.file.WatchKey
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.isRegularFile
