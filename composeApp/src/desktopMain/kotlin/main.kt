@@ -3,7 +3,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -15,8 +14,10 @@ import androidx.compose.ui.window.rememberWindowState
 import com.aallam.openai.client.OpenAI
 import kotlinx.coroutines.runBlocking
 import openai.OpenAICustomizedClient
+import java.time.Duration
 import java.util.concurrent.Executors
 import javax.sound.sampled.AudioSystem
+
 
 fun main() {
     println("Start application...")
@@ -95,14 +96,16 @@ fun main() {
         Window(onCloseRequest = ::exitApplication, title = "MeetNote", state = rememberWindowState()) {
             LaunchedEffect(Unit) {
                 Thread {
-                    println("Starting HighCpuUsageRecorderController...")
+                    println("Starting WindowNameRecorderController...")
 
-                    val recorderController = HighCpuUsageRecorderController(
+                    WindowNameRecorderController(
                         recorder,
-                        "/Applications/zoom.us.app/Contents/MacOS/zoom.us",
-                        10.0,
-                    )
-                    recorderController.start()
+                        listOf(
+                            WindowNamePattern("us.zoom.xos", "Zoom Meeting"),
+                        ),
+                        Duration.ofSeconds(1),
+                        Duration.ofMinutes(30),
+                    ).start()
                 }.start()
             }
 

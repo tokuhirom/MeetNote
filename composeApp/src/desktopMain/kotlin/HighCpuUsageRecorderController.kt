@@ -48,7 +48,7 @@ class HighCpuUsageRecorderController(
     }
 
     private fun shouldRecording(): Boolean {
-        val cpuUsage = getZoomCpuUsage()
+        val cpuUsage = getCpuUsage()
             ?: return false // process not found.
 
         // Continue recording if any of the recent measurements exceeds the threshold.
@@ -59,7 +59,7 @@ class HighCpuUsageRecorderController(
         return cpuUsagesHistory.any { it > cpuUsageThreshold }
     }
 
-    private fun getZoomCpuUsage(): Double? {
+    private fun getCpuUsage(): Double? {
         val processBuilder = ProcessBuilder("ps", "aux")
         val process = processBuilder.start()
         val reader = BufferedReader(InputStreamReader(process.inputStream))
