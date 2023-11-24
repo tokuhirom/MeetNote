@@ -41,6 +41,7 @@ end tell
         """.trimIndent()
 
         val pb = ProcessBuilder("osascript", "-e", script)
+        pb.redirectError()
         val p = pb.start()
 
         val lines = BufferedReader(InputStreamReader(p.inputStream)).use { reader ->
@@ -49,7 +50,7 @@ end tell
 
         val exitStatus = p.waitFor() // Wait for the process to finish.
         if (exitStatus != 0) {
-            throw RuntimeException("Failed to execute osascript. Exit status: $exitStatus")
+            throw RuntimeException("Failed to execute osascript. Exit status: $exitStatus, lines='$lines'")
         }
 
         return lines
