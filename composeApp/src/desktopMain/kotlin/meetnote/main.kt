@@ -18,12 +18,15 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.aallam.openai.client.OpenAI
 import kotlinx.coroutines.runBlocking
+import org.slf4j.LoggerFactory
 import java.util.concurrent.Executors
 import javax.sound.sampled.AudioSystem
 
 
 fun main() {
-    println("Start application...")
+    val logger = LoggerFactory.getLogger("main")
+
+    logger.info("Start application...")
 
     val configRepository = ConfigRepository()
     val config = configRepository.loadSettings()
@@ -84,7 +87,7 @@ fun main() {
                             "  "
                         } + mixerInfo.name
                     ) {
-                        println("Selected mixer: $mixerInfo")
+                        logger.info("Selected mixer: $mixerInfo")
                         recorder.setMixer(mixerInfo)
                         selectedMixer = mixerInfo
                     }
@@ -107,7 +110,7 @@ fun main() {
 
             LaunchedEffect(Unit) {
                 Thread {
-                    println("Starting WindowNameRecorderController...")
+                    logger.info("Starting WindowNameRecorderController...")
 
                     WindowNameRecorderController(
                         recorder,

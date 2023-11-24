@@ -60,7 +60,7 @@ class PostProcessor(
                 logger.info("Converted to mp3: $mp3Path(${mp3Path.fileSize()} bytes) from $wavePath(${wavePath.fileSize()} bytes)")
             }
         } catch (ex: Exception) {
-            println("Failed to convert wave file. Error: ${ex.message}")
+            logger.error("Failed to convert wave file. Error: ${ex.message}", ex)
         }
         return mp3Path
     }

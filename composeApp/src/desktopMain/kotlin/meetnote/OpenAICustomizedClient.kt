@@ -8,13 +8,13 @@ import io.ktor.client.request.forms.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.jackson.*
+import org.slf4j.LoggerFactory
 import java.io.File
 
 
-data class TranscriptionResponse(val text: String)
-
 // transcriptions が java.io.IOException: Stream Closed になるので、直接 ktor で動かす。
 class OpenAICustomizedClient(private val openAIApiKey: String) {
+    private val logger = LoggerFactory.getLogger(javaClass)
     private val client = HttpClient {
         install(HttpTimeout) {
             requestTimeoutMillis = 1000 * 60 * 10
@@ -45,7 +45,7 @@ class OpenAICustomizedClient(private val openAIApiKey: String) {
 
         if (response.status == HttpStatusCode.OK) {
             val data = response.bodyAsText()
-            println("Transcribed text: $data")
+            logger.debug("Transcribed text: $data")
             return data
         } else {
             throw RuntimeException("Transcription failed. Status: ${response.status}")

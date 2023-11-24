@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonMapperBuilder
 import com.fasterxml.jackson.module.kotlin.readValue
+import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -14,6 +15,7 @@ import kotlin.io.path.notExists
 import kotlin.io.path.writeText
 
 class ConfigRepository {
+    private val logger = LoggerFactory.getLogger(javaClass)
     private val objectMapper = jacksonMapperBuilder()
         .addModule(JavaTimeModule())
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
@@ -27,7 +29,7 @@ class ConfigRepository {
             path.parent.toFile().mkdirs()
         }
 
-        println("Saving $path: $jsonData")
+        logger.info("Saving $path: $jsonData")
         val tempFile = path.resolveSibling(path.name + ".tmp")
         tempFile.writeText(jsonData)
         Files.move(tempFile, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)

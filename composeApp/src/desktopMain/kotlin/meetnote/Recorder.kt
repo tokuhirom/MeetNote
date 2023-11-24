@@ -65,7 +65,7 @@ class Recorder(
         recordingState = RecordingState(line, path)
         recordingWriterExecutor.submit {
             val out = AudioSystem.write(AudioInputStream(line), AudioFileFormat.Type.WAVE, path!!.toFile())
-            println("Wrote $path: $out bytes")
+            logger.info("Wrote $path: $out bytes")
         }
 
         onStartRecording(path)
