@@ -157,11 +157,12 @@ class MainApp(private val dataRepository: DataRepository) {
 
         Thread {
             while (true) {
-                // TODO ignore files that are not .md
                 val key = watchService.take()
-                key.pollEvents()
-                // Directory has changed, call the callback
-                callback()
+                if (key.pollEvents().any { event ->
+                        event.context() is Path && (event.context() as Path).toString().endsWith(".md")
+                    }) {
+                    callback()
+                }
                 key.reset()
             }
         }.start()
