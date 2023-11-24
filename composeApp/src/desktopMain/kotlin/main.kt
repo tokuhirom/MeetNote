@@ -1,4 +1,3 @@
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -8,6 +7,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyShortcut
 import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
@@ -98,7 +99,8 @@ fun main() {
         )
 
         Window(onCloseRequest = ::exitApplication, title = "MeetNote", state = rememberWindowState()) {
-            var showWindowListWindow by remember { mutableStateOf(false) }
+            var showWindowListDialog by remember { mutableStateOf(false) }
+            var showConfigurationDialog by remember { mutableStateOf(false) }
 
             LaunchedEffect(Unit) {
                 Thread {
@@ -116,9 +118,15 @@ fun main() {
                 }.start()
             }
 
-            if (showWindowListWindow) {
+            if (showWindowListDialog) {
                 windowListDialog(windowNameCollector) {
-                    showWindowListWindow = false
+                    showWindowListDialog = false
+                }
+            }
+
+            if (showConfigurationDialog) {
+                configurationDialog(configRepository) {
+                    showConfigurationDialog = false
                 }
             }
 
@@ -127,8 +135,10 @@ fun main() {
             MenuBar {
                 this.Menu("Misc") {
                     Item("Window List", onClick = {
-                        println("Clicked...")
-                        showWindowListWindow = true
+                        showWindowListDialog = true
+                    })
+                    Item("Configuration", shortcut = KeyShortcut(Key.Comma, meta = true), onClick = {
+                        showConfigurationDialog = true
                     })
                 }
             }
