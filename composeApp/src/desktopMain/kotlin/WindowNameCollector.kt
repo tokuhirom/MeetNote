@@ -7,27 +7,22 @@ class WindowNameCollector {
     fun getWindowStateList(): List<WindowState> {
         val windowListString = getWindowListString()
 
-        return windowListString.map {
-            parseWindowState(it)
-        }
+        return parseWindowState(windowListString)
     }
 
-    private fun parseWindowState(input: String): WindowState {
+    private fun parseWindowState(input: String): List<WindowState> {
         // Regex pattern for matching the input string.
-        val pattern = """Process: (.*?), PID: (.*?), Bundle ID: (.*?), Window: (.*?)""".toRegex(RegexOption.DOT_MATCHES_ALL)
+        val pattern = """Process: '(.+?)', PID: '(.+?)', Bundle ID: '(.+?)', Window: '(.+?)'""".toRegex(RegexOption.DOT_MATCHES_ALL)
 
         // Try to find a match in the input string.
-        val matchResult = pattern.matchEntire(input)
-
-        if (matchResult != null) {
+        val matchResults = pattern.findAll(input)
+        return matchResults.map { matchResult ->
             val (processName, processId, bundleId, windowName) = matchResult.destructured
-            return WindowState(processName, processId, bundleId, windowName)
-        } else {
-            throw RuntimeException("Failed to parse window state: '$input'")
-        }
+            WindowState(processName, processId, bundleId, windowName)
+        }.toList()
     }
 
-    private fun getWindowListString(): List<String> {
+    private fun getWindowListString(): String {
         val script = """
 tell application "System Events"
     set procs to processes
@@ -35,7 +30,7 @@ tell application "System Events"
     repeat with proc in procs
         if exists (window 1 of proc) then
             repeat with w in windows of proc
-                set results to results & "Process: " & name of proc & ", PID: " & unix id of proc & ", Bundle ID: " & bundle identifier of proc & ", Window: " & name of w & "\n"
+                set results to results & "Process: '" & name of proc & "', PID: '" & unix id of proc & "', Bundle ID: '" & bundle identifier of proc & "', Window: '" & name of w & "'\n"
             end repeat
         end if
     end repeat
@@ -47,9 +42,7 @@ end tell
         val p = pb.start()
 
         val lines = BufferedReader(InputStreamReader(p.inputStream)).use { reader ->
-            reader.readLines().filter {
-                it.isNotBlank()
-            }
+            reader.readText()
         }
 
         val exitStatus = p.waitFor() // Wait for the process to finish.
