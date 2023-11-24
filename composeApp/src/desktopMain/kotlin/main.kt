@@ -100,7 +100,7 @@ fun main() {
 
         Window(onCloseRequest = ::exitApplication, title = "MeetNote", state = rememberWindowState()) {
             var showWindowListDialog by remember { mutableStateOf(false) }
-            var showConfigurationDialog by remember { mutableStateOf(false) }
+            var showConfigurationDialog by remember { mutableStateOf(configRepository.loadSettings().apiToken.isNullOrBlank()) }
 
             LaunchedEffect(Unit) {
                 Thread {
