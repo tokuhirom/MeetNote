@@ -26,7 +26,7 @@ kotlin {
             implementation("org.slf4j:slf4j-api:2.0.9")
             implementation("com.aallam.openai:openai-client:3.6.0")
             implementation("com.aallam.ktoken:ktoken:0.3.0")
-            implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.3")
+            implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.0")
 
             val ktorVersion = "2.3.6"
             implementation("io.ktor:ktor-client-core:$ktorVersion")
