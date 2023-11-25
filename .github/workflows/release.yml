@@ -22,8 +22,12 @@ jobs:
       - name: Set up Gradle Wrapper
         uses: gradle/wrapper-validation-action@v1
 
+      - name: Extract release version
+        id: extract_version
+        run: echo "::set-output name=version::${{ github.ref#refs/tags/ }}"
+
       - name: Build with Gradle
-        run: ./gradlew -Prelease=${{ github.ref }} packageDmg
+        run: ./gradlew -Prelease=${{ steps.extract_version.outputs.version }} packageDmg
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
