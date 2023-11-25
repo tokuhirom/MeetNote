@@ -27,7 +27,7 @@ jobs:
         run: echo "::set-output name=version::${{ github.ref#refs/tags/ }}"
 
       - name: Build with Gradle
-        run: ./gradlew -Prelease=${{ steps.extract_version.outputs.version }} packageDmg
+        run: ./gradlew -Prelease=${{ github.event.release.tag_name }} packageDmg
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
