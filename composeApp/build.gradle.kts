@@ -54,7 +54,7 @@ compose.desktop {
             modules("jdk.unsupported")
 
             packageName = "MeetNote"
-            packageVersion = "1.0.0"
+            packageVersion = (findProperty("release") ?: "1.0.0").toString()
 
             macOS {
                 iconFile.set(project.file("src/desktopMain/resources/icon.icns"))
