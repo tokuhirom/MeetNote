@@ -1,10 +1,14 @@
 package meetnote
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -14,6 +18,7 @@ import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
+import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -23,7 +28,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyShortcut
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.MenuBar
+import androidx.compose.ui.window.Window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -37,8 +48,9 @@ import kotlin.io.path.deleteIfExists
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.name
 import kotlin.io.path.readText
+import kotlin.io.path.writeText
 
-data class LogEntry(val path: Path, val content: String) {
+data class LogEntry(val path: Path, var content: String) {
     fun title(): String {
         val inputFileName = path.name
 
@@ -124,14 +136,80 @@ class MainApp(private val dataRepository: DataRepository) {
 
                                 Spacer(modifier = Modifier.weight(1f))
 
+                                var showEditWindow by remember { mutableStateOf(false) }
+                                var content by remember { mutableStateOf(log.content) }
+                                var isDirty by remember { mutableStateOf(false) }
+
                                 Button(onClick = {
-                                    val process = ProcessBuilder(
-                                        "code", log.path.toAbsolutePath().toString()
-                                    ).start()
-                                    process.waitFor()
+                                    content = log.path.readText()
+                                    showEditWindow = true
                                 }) {
                                     Text("Edit")
                                 }
+
+                                if (showEditWindow) {
+                                    var showConfirmDialog by remember { mutableStateOf(false) }
+
+                                    fun saveContent() {
+                                        log.path.writeText(content)
+                                        isDirty = false
+                                        log.content = content
+                                    }
+
+                                    Window(
+                                        onCloseRequest = { },
+                                        title = "Editing ${log.title()}" + if (isDirty) { " (Editing)" } else { "" },
+                                        content = {
+                                            TextField(
+                                                value = content,
+                                                onValueChange = {
+                                                    logger.info("onValueChange: $it")
+                                                    content = it
+                                                    isDirty = true
+                                                },
+                                                modifier = Modifier.fillMaxWidth().fillMaxHeight()
+                                            )
+                                            MenuBar {
+                                                this.Menu("File") {
+                                                    Item("Save", shortcut = KeyShortcut(Key.S, meta = true), onClick = {
+                                                        logger.info("Saving ${log.path}")
+                                                        saveContent()
+                                                    })
+                                                    Item("Close", shortcut = KeyShortcut(Key.W, meta=true), onClick = {
+                                                        if (isDirty) {
+                                                            // Show "really close this window?" dialog
+                                                            showConfirmDialog = true
+                                                        } else {
+                                                            showEditWindow = false
+                                                        }
+                                                    })
+                                                }
+                                            }
+                                            if (showConfirmDialog) {
+                                                Dialog(onDismissRequest = { showConfirmDialog = false }) {
+                                                    Column(modifier = Modifier.background(Color.LightGray)) {
+                                                        Text(text = "Really close the editing window？", modifier = Modifier.padding(8.dp))
+                                                        Row(modifier = Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.End) {
+                                                            Button(onClick = { showConfirmDialog = false; }) {
+                                                                Text("Cancel")
+                                                            }
+                                                            Spacer(modifier = Modifier.width(8.dp))
+                                                            Button(onClick = {
+                                                                showConfirmDialog = false
+                                                                saveContent()
+                                                                showEditWindow = false
+                                                            }) {
+                                                                Text("Save and Close")
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    )
+
+                                }
+
                                 Button(onClick = {
                                     isConfirmDialogOpen = true
                                 }) {
