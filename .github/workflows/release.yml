@@ -1,5 +1,8 @@
 name: Create Release and Upload Artifact
 
+permissions:
+  contents: write
+
 on:
   release:
     types:
@@ -26,11 +29,6 @@ jobs:
         run: ./gradlew -Prelease=${{ github.event.release.tag_name }} packageDmg
 
       - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: composeApp/build/compose/binaries/main/dmg/MeetNote-${{ github.event.release.tag_name }}.dmg
-          asset_name: MeetNote-${{ github.event.release.tag_name }}.dmg
-          asset_content_type: application/octet-stream
+          files: composeApp/build/compose/binaries/main/dmg/MeetNote-${{ github.event.release.tag_name }}.dmg
