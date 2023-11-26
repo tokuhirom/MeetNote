@@ -20,7 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogWindow
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 @Composable
 fun windowListDialog(windowNameCollector: WindowNameCollector, onCloseRequest: () -> Unit) {
@@ -29,8 +31,10 @@ fun windowListDialog(windowNameCollector: WindowNameCollector, onCloseRequest: (
     DialogWindow(onCloseRequest, title = "Window List", resizable = true) {
         LaunchedEffect(Unit) {
             while (true) {
-                windowNameList = windowNameCollector.getWindowStateList().sortedByDescending {
-                    it.bundleId
+                windowNameList = withContext(Dispatchers.IO) {
+                    windowNameCollector.getWindowStateList().sortedByDescending {
+                        it.bundleId
+                    }
                 }
                 delay(3000)
             }
