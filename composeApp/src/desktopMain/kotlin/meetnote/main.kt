@@ -19,7 +19,6 @@ import androidx.compose.ui.window.rememberWindowState
 import com.aallam.openai.client.OpenAI
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
-import java.nio.file.Path
 import java.util.concurrent.Executors
 import javax.sound.sampled.AudioSystem
 
