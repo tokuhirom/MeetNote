@@ -33,7 +33,6 @@ class PostProcessor(
     private fun cleanup(wavePath: Path, mp3Path: Path) {
         logger.info("Removing used files: $wavePath, $mp3Path")
         wavePath.toFile().delete()
-//        mp3Path.toFile().delete()
     }
 
     private fun convertToMp3(wavePath: Path): Path {
