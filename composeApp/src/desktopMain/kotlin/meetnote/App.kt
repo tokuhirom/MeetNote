@@ -136,78 +136,18 @@ class MainApp(private val dataRepository: DataRepository) {
 
                                 Spacer(modifier = Modifier.weight(1f))
 
-                                var showEditWindow by remember { mutableStateOf(false) }
-                                var content by remember { mutableStateOf(log.content) }
-                                var isDirty by remember { mutableStateOf(false) }
+                                var showEditSummaryWindow by remember { mutableStateOf(false) }
 
                                 Button(onClick = {
-                                    content = log.path.readText()
-                                    showEditWindow = true
+                                    showEditSummaryWindow = true
                                 }) {
-                                    Text("Edit")
+                                    Text("Edit Summary")
                                 }
 
-                                if (showEditWindow) {
-                                    var showConfirmDialog by remember { mutableStateOf(false) }
-
-                                    fun saveContent() {
-                                        log.path.writeText(content)
-                                        isDirty = false
-                                        log.content = content
+                                if (showEditSummaryWindow) {
+                                    editSummaryWindow(log) {
+                                        showEditSummaryWindow = false
                                     }
-
-                                    Window(
-                                        onCloseRequest = { },
-                                        title = "Editing ${log.title()}" + if (isDirty) { " (Editing)" } else { "" },
-                                        content = {
-                                            TextField(
-                                                value = content,
-                                                onValueChange = {
-                                                    logger.info("onValueChange: $it")
-                                                    content = it
-                                                    isDirty = true
-                                                },
-                                                modifier = Modifier.fillMaxWidth().fillMaxHeight()
-                                            )
-                                            MenuBar {
-                                                this.Menu("File") {
-                                                    Item("Save", shortcut = KeyShortcut(Key.S, meta = true), onClick = {
-                                                        logger.info("Saving ${log.path}")
-                                                        saveContent()
-                                                    })
-                                                    Item("Close", shortcut = KeyShortcut(Key.W, meta=true), onClick = {
-                                                        if (isDirty) {
-                                                            // Show "really close this window?" dialog
-                                                            showConfirmDialog = true
-                                                        } else {
-                                                            showEditWindow = false
-                                                        }
-                                                    })
-                                                }
-                                            }
-                                            if (showConfirmDialog) {
-                                                Dialog(onDismissRequest = { showConfirmDialog = false }) {
-                                                    Column(modifier = Modifier.background(Color.LightGray)) {
-                                                        Text(text = "Really close the editing window？", modifier = Modifier.padding(8.dp))
-                                                        Row(modifier = Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.End) {
-                                                            Button(onClick = { showConfirmDialog = false; }) {
-                                                                Text("Cancel")
-                                                            }
-                                                            Spacer(modifier = Modifier.width(8.dp))
-                                                            Button(onClick = {
-                                                                showConfirmDialog = false
-                                                                saveContent()
-                                                                showEditWindow = false
-                                                            }) {
-                                                                Text("Save and Close")
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    )
-
                                 }
 
                                 Button(onClick = {
@@ -228,6 +168,81 @@ class MainApp(private val dataRepository: DataRepository) {
                 }
             }
         }
+    }
+
+    @Composable
+    private fun editSummaryWindow(
+        log: LogEntry,
+        onHideWindow: () -> Unit,
+    ) {
+        var showConfirmDialog by remember { mutableStateOf(false) }
+
+        var content by remember { mutableStateOf(log.content) }
+        var isDirty by remember { mutableStateOf(false) }
+        fun saveContent() {
+            log.path.writeText(content)
+            isDirty = false
+            log.content = content
+        }
+
+        Window(
+            onCloseRequest = { },
+            title = "Editing ${log.title()}" + if (isDirty) {
+                " (Editing)"
+            } else {
+                ""
+            },
+            content = {
+                TextField(
+                    value = content,
+                    onValueChange = {
+                        logger.info("onValueChange: $it")
+                        content = it
+                        isDirty = true
+                    },
+                    modifier = Modifier.fillMaxWidth().fillMaxHeight()
+                )
+                MenuBar {
+                    this.Menu("File") {
+                        Item("Save", shortcut = KeyShortcut(Key.S, meta = true), onClick = {
+                            logger.info("Saving ${log.path}")
+                            saveContent()
+                        })
+                        Item("Close", shortcut = KeyShortcut(Key.W, meta = true), onClick = {
+                            if (isDirty) {
+                                // Show "really close this window?" dialog
+                                showConfirmDialog = true
+                            } else {
+                                onHideWindow()
+                            }
+                        })
+                    }
+                }
+                if (showConfirmDialog) {
+                    Dialog(onDismissRequest = { showConfirmDialog = false }) {
+                        Column(modifier = Modifier.background(Color.LightGray)) {
+                            Text(text = "Really close the editing window？", modifier = Modifier.padding(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                Button(onClick = { showConfirmDialog = false; }) {
+                                    Text("Cancel")
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Button(onClick = {
+                                    showConfirmDialog = false
+                                    saveContent()
+                                    onHideWindow()
+                                }) {
+                                    Text("Save and Close")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        )
     }
 
     private fun deleteFileWithSameNameVtt(file: File) {
