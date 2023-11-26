@@ -18,7 +18,7 @@ kotlin {
             implementation(compose.desktop.currentOs)
         }
         desktopTest.dependencies {
-            implementation("org.junit.jupiter:junit-jupiter:5.8.1")
+            implementation("org.junit.jupiter:junit-jupiter:5.10.1")
             implementation("com.willowtreeapps.assertk:assertk:0.27.0")
         }
         commonMain.dependencies {
