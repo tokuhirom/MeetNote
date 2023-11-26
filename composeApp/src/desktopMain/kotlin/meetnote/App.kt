@@ -44,13 +44,19 @@ import java.nio.file.FileSystems
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardWatchEventKinds
+import java.time.format.DateTimeFormatter
 import kotlin.io.path.deleteIfExists
+import kotlin.io.path.exists
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.name
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 data class LogEntry(val path: Path, var content: String) {
+    fun vttPath(): Path {
+        return path.resolveSibling(path.name.replace(".md", ".vtt"))
+    }
+
     fun title(): String {
         val inputFileName = path.name
 
@@ -150,6 +156,20 @@ class MainApp(private val dataRepository: DataRepository) {
                                     }
                                 }
 
+                                if (log.vttPath().exists()) {
+                                    var showVttWindow by remember { mutableStateOf(false) }
+                                    Button(onClick = {
+                                        showVttWindow = true
+                                    }) {
+                                        Text("View raw log(VTT)")
+                                    }
+                                    if (showVttWindow) {
+                                        vttWindow(log) {
+                                            showVttWindow = false
+                                        }
+                                    }
+                                }
+
                                 Button(onClick = {
                                     isConfirmDialogOpen = true
                                 }) {
@@ -168,6 +188,39 @@ class MainApp(private val dataRepository: DataRepository) {
                 }
             }
         }
+    }
+
+    @Composable
+    private fun vttWindow(log: LogEntry, onHideWindow: () -> Unit) {
+        val vttPath = log.path.resolveSibling(log.path.name.replace(".md", ".vtt"))
+
+        Window(
+            onCloseRequest = { onHideWindow() },
+            title = "Viewing ${log.title()}(VTT)",
+            content = {
+                LazyColumn {
+                    val content = compactionWebVtt(parseWebVtt(vttPath.readText()))
+                    items(content) {row ->
+                        Row {
+                            SelectionContainer {
+                                Text(
+                                    row.start.format(DateTimeFormatter.ISO_TIME)
+                                            + " " + row.end.format(DateTimeFormatter.ISO_TIME)
+                                            + " " + row.content,
+                                )
+                            }
+                        }
+                    }
+                }
+                MenuBar {
+                    this.Menu("File") {
+                        Item("Close", shortcut = KeyShortcut(Key.W, meta = true), onClick = {
+                            onHideWindow()
+                        })
+                    }
+                }
+            }
+        )
     }
 
     @Composable

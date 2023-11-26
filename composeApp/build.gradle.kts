@@ -12,9 +12,14 @@ kotlin {
     
     sourceSets {
         val desktopMain by getting
-        
+        val desktopTest by getting
+
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
+        }
+        desktopTest.dependencies {
+            implementation("org.junit.jupiter:junit-jupiter:5.8.1")
+            implementation("com.willowtreeapps.assertk:assertk:0.27.0")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -39,6 +44,9 @@ kotlin {
     }
 }
 
+tasks.named<Test>("desktopTest") {
+    useJUnitPlatform()
+}
 
 compose.desktop {
     application {
