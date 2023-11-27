@@ -55,6 +55,20 @@ graph TB
     classDef device fill:#f9d,stroke:#333,stroke-width:4px;
 ```
 
+Speaker configuration:
+
+![img.png](img.png)
+
+Zoom Configuration:
+
+![img_1.png](img_1.png)
+
+Audio MIDI setup:
+
+![img_3.png](img_3.png)
+
+![img_2.png](img_2.png)
+
 ## Build
 
 Build the app by running the following command:
