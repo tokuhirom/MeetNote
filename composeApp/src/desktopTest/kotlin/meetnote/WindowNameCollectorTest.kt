@@ -8,31 +8,31 @@ import org.junit.jupiter.api.Test
 class WindowNameCollectorTest {
 
     @Test
+    fun testGetWindowListString() {
+        val res = WindowNameCollector().getWindowListString()
+        println(res)
+    }
+
+    @Test
     fun testParseWindowState() {
         val res = WindowNameCollector().parseWindowState(
             """
-                Process: 'zoom.us', PID: '788', Bundle ID: 'us.zoom.xos', Window: ''
-                Process: 'zoom.us', PID: '788', Bundle ID: 'us.zoom.xos', Window: 'Zoom Meeting'
-                Process: 'zoom.us', PID: '788', Bundle ID: 'us.zoom.xos', Window: 'Zoom'
+                <BUNDLEID>us.zoom.xos</BUNDLEID><WINDOW></WINDOW>
+                <BUNDLEID>us.zoom.xos</BUNDLEID><WINDOW>Zoom Meeting</WINDOW>
+                <BUNDLEID>us.zoom.xos</BUNDLEID><WINDOW>Zoom</WINDOW>
             """.trimIndent()
         )
 
         assertThat(res).isEqualTo(listOf(
             WindowState(
-                processName = "zoom.us",
-                processId = "788",
                 bundleId = "us.zoom.xos",
                 windowName = ""
             ),
             WindowState(
-                processName = "zoom.us",
-                processId = "788",
                 bundleId = "us.zoom.xos",
                 windowName = "Zoom Meeting"
             ),
             WindowState(
-                processName = "zoom.us",
-                processId = "788",
                 bundleId = "us.zoom.xos",
                 windowName = "Zoom"
             )

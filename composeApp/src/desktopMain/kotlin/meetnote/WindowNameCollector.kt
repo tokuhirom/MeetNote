@@ -7,7 +7,7 @@ import java.io.InputStreamReader
 class WindowNameCollector {
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    data class WindowState(val processName: String, val processId: String, val bundleId: String, val windowName: String)
+    data class WindowState(val bundleId: String, val windowName: String)
 
     fun getWindowStateList(): List<WindowState> {
         val windowListString = getWindowListString()
@@ -16,19 +16,19 @@ class WindowNameCollector {
         return parseWindowState(windowListString)
     }
 
-    fun parseWindowState(input: String): List<WindowState> {
+    internal fun parseWindowState(input: String): List<WindowState> {
         // Regex pattern for matching the input string.
-        val pattern = """Process: '(.+?)', PID: '(.+?)', Bundle ID: '(.+?)', Window: '(.*?)'""".toRegex(RegexOption.DOT_MATCHES_ALL)
+        val pattern = """<BUNDLEID>(.*?)</BUNDLEID><WINDOW>(.*?)</WINDOW>""".toRegex(RegexOption.DOT_MATCHES_ALL)
 
         // Try to find a match in the input string.
         val matchResults = pattern.findAll(input)
         return matchResults.map { matchResult ->
-            val (processName, processId, bundleId, windowName) = matchResult.destructured
-            WindowState(processName, processId, bundleId, windowName)
+            val (bundleId, windowName) = matchResult.destructured
+            WindowState(bundleId, windowName)
         }.toList()
     }
 
-    private fun getWindowListString(): String {
+    internal fun getWindowListString(): String {
         val script = """
 tell application "System Events"
     set procs to processes
@@ -36,7 +36,7 @@ tell application "System Events"
     repeat with proc in procs
         if exists (window 1 of proc) then
             repeat with w in windows of proc
-                set results to results & "Process: '" & name of proc & "', PID: '" & unix id of proc & "', Bundle ID: '" & bundle identifier of proc & "', Window: '" & name of w & "'\n"
+                set results to results & "<BUNDLEID>" & bundle identifier of proc & "</BUNDLEID><WINDOW>" & name of w & "</WINDOW>\n"
             end repeat
         end if
     end repeat
