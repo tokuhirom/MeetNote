@@ -12,7 +12,7 @@ class WindowNameCollector {
         return parseWindowState(windowListString)
     }
 
-    private fun parseWindowState(input: String): List<WindowState> {
+    fun parseWindowState(input: String): List<WindowState> {
         // Regex pattern for matching the input string.
         val pattern = """Process: '(.+?)', PID: '(.+?)', Bundle ID: '(.+?)', Window: '(.*?)'""".toRegex(RegexOption.DOT_MATCHES_ALL)
 
