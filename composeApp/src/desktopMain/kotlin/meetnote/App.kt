@@ -35,7 +35,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.Window
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
@@ -87,11 +86,11 @@ class MainApp(private val dataRepository: DataRepository) {
 
             val job = rememberCoroutineScope().launch(Dispatchers.IO) {
                 val path = dataRepository.getDataDirectory()
-                CoroutineScope(Dispatchers.IO).launch {
-                    startFileWatcher(path) {
-                        logger.info("File changed. Reloading logs...")
-                        logs = loadLogs()
-                    }
+                logger.info("Starting file watching coroutine...")
+
+                startFileWatcher(path) {
+                    logger.info("File changed. Reloading logs...")
+                    logs = loadLogs()
                 }
             }
 
@@ -316,12 +315,16 @@ class MainApp(private val dataRepository: DataRepository) {
         )
 
         Thread {
+            logger.info("Starting file watching thread...: $path")
+
             while (true) {
                 val key = watchService.take()
-                if (key.pollEvents().any { event ->
-                        event.context() is Path && (event.context() as Path).toString().endsWith(".md")
-                    }) {
+                logger.info("Got watch event.")
+                val events = key.pollEvents()
+                for (event in events) {
+                    logger.info("Event: context=${event.context()}")
                     callback()
+                    break
                 }
                 key.reset()
             }
