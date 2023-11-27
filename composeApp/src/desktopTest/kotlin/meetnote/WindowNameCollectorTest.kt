@@ -4,9 +4,12 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import meetnote.WindowNameCollector.WindowState
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.EnabledOnOs
+import org.junit.jupiter.api.condition.OS
 
 class WindowNameCollectorTest {
 
+    @EnabledOnOs(OS.MAC)
     @Test
     fun testGetWindowListString() {
         val res = WindowNameCollector().getWindowListString()
