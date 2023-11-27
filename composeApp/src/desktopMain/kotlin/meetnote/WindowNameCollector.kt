@@ -1,13 +1,17 @@
 package meetnote
 
+import org.slf4j.LoggerFactory
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
 class WindowNameCollector {
+    private val logger = LoggerFactory.getLogger(javaClass)
+
     data class WindowState(val processName: String, val processId: String, val bundleId: String, val windowName: String)
 
     fun getWindowStateList(): List<WindowState> {
         val windowListString = getWindowListString()
+        logger.info("windowListString: $windowListString")
 
         return parseWindowState(windowListString)
     }
