@@ -27,7 +27,7 @@ kotlin {
             implementation(compose.material)
             @OptIn(ExperimentalComposeLibrary::class)
             implementation(compose.components.resources)
-            implementation("ch.qos.logback:logback-classic:1.4.11")
+            implementation("ch.qos.logback:logback-classic:1.4.12")
             implementation("org.slf4j:slf4j-api:2.0.9")
             implementation("com.aallam.openai:openai-client:3.6.1")
             implementation("com.aallam.ktoken:ktoken:0.3.0")
