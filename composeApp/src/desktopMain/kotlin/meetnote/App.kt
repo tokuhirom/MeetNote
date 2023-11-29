@@ -223,6 +223,7 @@ class MainApp(private val dataRepository: DataRepository) {
                 var playing by remember { mutableStateOf(false) }
                 var seekToMicroSecond: Long? by remember { mutableStateOf(null) }
                 var currentPosition: String? by remember { mutableStateOf(null) }
+                val hasMp3File = log.mp3Path().exists()
 
                 LaunchedEffect(playing, seekToMicroSecond) {
                     if (playing) {
@@ -289,28 +290,33 @@ class MainApp(private val dataRepository: DataRepository) {
                     }
                 }
 
-                Row {
-                    Button(onClick = {
-                        playing = !playing
-                    }) {
-                        Text(if (playing) {
-                            "⏸"
-                        } else {
-                            "▶"
-                        })
-                    }
+                if (hasMp3File) {
+                    Row {
+                        Button(onClick = {
+                            playing = !playing
+                        }) {
+                            Text(if (playing) {
+                                "⏸"
+                            } else {
+                                "▶"
+                            })
+                        }
 
-                    Text(currentPosition ?: "")
+                        Text(currentPosition ?: "")
+                    }
                 }
 
                 LazyColumn {
                     val content = compactionWebVtt(parseWebVtt(vttPath.readText()))
                     items(content) { row ->
                         Row(modifier = Modifier.padding(4.dp)) {
-                            Text("▶", modifier = Modifier.onClick {
-                                seekToMicroSecond = (row.start.toSecondOfDay() * 1000 * 1000).toLong()
-                                playing = true
-                            })
+                            if (hasMp3File) {
+                                Text("▶", modifier = Modifier.onClick {
+                                    seekToMicroSecond = (row.start.toSecondOfDay() * 1000 * 1000).toLong()
+                                    playing = true
+                                })
+                            }
+
                             SelectionContainer {
                                 Text(
                                     row.start.format(DateTimeFormatter.ISO_TIME)
