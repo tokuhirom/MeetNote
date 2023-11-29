@@ -1,5 +1,8 @@
 package meetnote
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.aallam.openai.api.chat.ChatRole
 import com.aallam.openai.api.chat.chatCompletionRequest
 import com.aallam.openai.api.chat.chatMessage
@@ -18,9 +21,11 @@ class PostProcessor(
     private val mp3bitRate: Int
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
+    var state by mutableStateOf("")
 
     suspend fun process(wavePath: Path) {
         logger.info("Starting post-processing: $wavePath")
+        state = "Starting post-processing: $wavePath"
 
         val mp3Path = convertToMp3(wavePath)
 
@@ -28,6 +33,7 @@ class PostProcessor(
         summarize(txtFilePath)
 
         cleanup(wavePath, mp3Path)
+        state = ""
     }
 
     private fun cleanup(wavePath: Path, mp3Path: Path) {
@@ -38,6 +44,7 @@ class PostProcessor(
     private fun convertToMp3(wavePath: Path): Path {
         val mp3Path = wavePath.resolveSibling("${wavePath.fileName.toString().dropLast(4)}.mp3")
 
+        state = "lame processing..."
         logger.info("Converting $wavePath(${wavePath.fileSize()} bytes) to mp3. bitrate: $mp3bitRate")
 
         try {
@@ -67,6 +74,7 @@ class PostProcessor(
 
     private suspend fun speechToText(mp3Path: Path): Path {
         val txtPath = mp3Path.resolveSibling("${mp3Path.fileName.toString().dropLast(4)}.vtt")
+        state = "Transcribing..."
         logger.info("Transcribing $mp3Path(${mp3Path.fileSize()} bytes) to $txtPath")
 
         val res = openAICustomizedClient.transcript(mp3Path.toFile(), "ja")
@@ -77,6 +85,8 @@ class PostProcessor(
     }
 
     private suspend fun summarize(txtFilePath: Path) {
+        state = "Summarizing..."
+
         val mdPath = txtFilePath.resolveSibling("${txtFilePath.fileName.toString().dropLast(4)}.md")
         val chatMessages = listOf(
             chatMessage {

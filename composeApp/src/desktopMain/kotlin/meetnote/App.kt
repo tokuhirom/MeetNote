@@ -79,7 +79,7 @@ class MainApp(private val dataRepository: DataRepository) {
     }
 
     @Composable
-    fun app() {
+    fun app(postProcessor: PostProcessor) {
         MaterialTheme {
             var logs by remember { mutableStateOf(loadLogs()) }
             logger.info("Starting App!!")
@@ -102,6 +102,10 @@ class MainApp(private val dataRepository: DataRepository) {
             }
 
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                if (postProcessor.state.isNotBlank()) {
+                    Text(postProcessor.state, color = Color.Blue)
+                }
+
                 LazyColumn(modifier = Modifier.weight(1f)) {
                     items(logs) {log ->
                         if (!log.path.isRegularFile()) {
@@ -329,5 +333,9 @@ class MainApp(private val dataRepository: DataRepository) {
                 key.reset()
             }
         }.start()
+    }
+
+    fun progressUpdate(progressMessage: String) {
+        TODO("Not yet implemented")
     }
 }

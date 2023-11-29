@@ -133,7 +133,7 @@ fun main() {
                 }
             }
 
-            mainApp.app()
+            mainApp.app(postProcessor)
 
             MenuBar {
                 this.Menu("Misc") {
