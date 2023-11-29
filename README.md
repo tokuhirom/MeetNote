@@ -23,51 +23,16 @@ To get the list of windows, this application requires the "Accessibility" permis
 
     brew install lame
 
-Lame is utilized for converting voice files to mp3.
+- MeetNote uses Lame to convert mp3 files to wave files, and also utilizes it to revert wave files back to mp3.
 
-### Blackhole
+### Blackhole or something other
 
-Install BlackHole to record both voice and microphone. To do so, run:
+This application can record the audio from a device.
 
-    brew install blackhole-2ch
+You may need to use audio loopback driver like blackhole, soundflower or loopback.
 
-And set them up as:
-
-```mermaid
-graph TB
-    A[Mic]
-    B[Online Meeting]
-    C[Aggregate Device]
-    D[Multi Output]
-    E[Blackhole]
-    F[MeetNote]
-    G[Speaker]
-
-    A -.-> B
-    A -.-> C
-    B --> D
-    D --> E
-    E --> C
-    C --> F
-    D --> G
-
-    class A,G device;
-    classDef device fill:#f9d,stroke:#333,stroke-width:4px;
-```
-
-Speaker configuration:
-
-![img.png](img.png)
-
-Zoom Configuration:
-
-![img_1.png](img_1.png)
-
-Audio MIDI setup:
-
-![img_3.png](img_3.png)
-
-![img_2.png](img_2.png)
+* https://github.com/ExistentialAudio/BlackHole
+* https://rogueamoeba.com/loopback/
 
 ## Build
 

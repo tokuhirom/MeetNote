@@ -1,5 +1,6 @@
 package meetnote
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.onClick
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button
@@ -21,6 +23,7 @@ import androidx.compose.material.TextButton
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,14 +39,21 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.Window
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.FileSystems
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardWatchEventKinds
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import javax.sound.sampled.AudioInputStream
+import javax.sound.sampled.AudioSystem
+import javax.sound.sampled.Clip
+import javax.sound.sampled.DataLine
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 import kotlin.io.path.isRegularFile
@@ -54,6 +64,10 @@ import kotlin.io.path.writeText
 data class LogEntry(val path: Path, var content: String) {
     fun vttPath(): Path {
         return path.resolveSibling(path.name.replace(".md", ".vtt"))
+    }
+
+    fun mp3Path(): Path {
+        return path.resolveSibling(path.name.replace(".md", ".mp3"))
     }
 
     fun title(): String {
@@ -193,18 +207,109 @@ class MainApp(private val dataRepository: DataRepository) {
         }
     }
 
+    @OptIn(ExperimentalFoundationApi::class)
     @Composable
     private fun vttWindow(log: LogEntry, onHideWindow: () -> Unit) {
         val vttPath = log.path.resolveSibling(log.path.name.replace(".md", ".vtt"))
 
         Window(
             onCloseRequest = { onHideWindow() },
-            title = "Viewing ${log.title()}(VTT)",
-            content = {
+            title = "Viewing ${log.title()}(VTT)"
+        ) {
+            Column {
+                val tmpFile = Files.createTempFile("meetnote", ".mp3")
+                var audioInputStream: AudioInputStream? by remember { mutableStateOf(null) }
+                var clip: Clip? by remember { mutableStateOf(null) }
+                var playing by remember { mutableStateOf(false) }
+                var seekToMicroSecond: Long? by remember { mutableStateOf(null) }
+                var currentPosition: String? by remember { mutableStateOf(null) }
+
+                LaunchedEffect(playing, seekToMicroSecond) {
+                    if (playing) {
+                        while (clip == null) {
+                            logger.info("Waiting clip to ready")
+                            delay(1000)
+                        }
+                        clip?.microsecondPosition = seekToMicroSecond ?: 0
+                        clip?.stop()
+                        clip?.start()
+                    } else {
+                        val p = clip?.microsecondPosition
+                        if (p != null && p != seekToMicroSecond) {
+                            seekToMicroSecond = p
+                        }
+                        clip?.stop()
+                    }
+                }
+
+                LaunchedEffect(Unit) {
+                    if (clip == null) {
+                        val mp3Path = log.mp3Path()
+
+                        logger.info("Converting $mp3Path to wave file")
+                        val processBuilder = ProcessBuilder(
+                            "lame",
+                            "--decode",
+                            mp3Path.toAbsolutePath().toString(),
+                            tmpFile.toAbsolutePath().toString(),
+                        )
+                        processBuilder.redirectError()
+                        val process = processBuilder.start()
+                        val mpg123log = String(process.inputStream.readAllBytes())
+                        val exitCode = process.waitFor()
+                        if (exitCode != 0) {
+                            logger.error("Cannot convert mp3 to wave file: $mpg123log")
+                        } else {
+                            logger.info("Converted $mp3Path to $tmpFile")
+                        }
+
+                        audioInputStream = AudioSystem.getAudioInputStream(tmpFile.toFile())
+                        clip =
+                            AudioSystem.getLine(DataLine.Info(Clip::class.java, audioInputStream!!.format)) as Clip
+                        clip!!.open(audioInputStream)
+                    }
+                }
+                LaunchedEffect(Unit) {
+                    while (true) {
+                        val p = clip?.microsecondPosition
+                        currentPosition = if (p != null) {
+                            LocalTime.ofNanoOfDay(p * 1000).toString()
+                        } else {
+                            null
+                        }
+                        delay(1000)
+                    }
+                }
+
+                DisposableEffect(Unit) {
+                    onDispose {
+                        audioInputStream?.close()
+                        tmpFile.deleteIfExists()
+                    }
+                }
+
+                Row {
+                    Button(onClick = {
+                        playing = !playing
+                    }) {
+                        Text(if (playing) {
+                            "⏸"
+                        } else {
+                            "▶"
+                        })
+                    }
+
+                    Text(currentPosition ?: "")
+                }
+
                 LazyColumn {
                     val content = compactionWebVtt(parseWebVtt(vttPath.readText()))
-                    items(content) {row ->
-                        Row {
+                    items(content) { row ->
+                        Row(modifier = Modifier.padding(4.dp)) {
+                            Text("▶", modifier = Modifier.onClick {
+                                seekToMicroSecond = (row.start.toSecondOfDay() * 1000 * 1000).toLong()
+                                playing = true
+                            })
                             SelectionContainer {
                                 Text(
                                     row.start.format(DateTimeFormatter.ISO_TIME)
@@ -215,15 +320,16 @@ class MainApp(private val dataRepository: DataRepository) {
                         }
                     }
                 }
-                MenuBar {
-                    this.Menu("File") {
-                        Item("Close", shortcut = KeyShortcut(Key.W, meta = true), onClick = {
-                            onHideWindow()
-                        })
-                    }
+            }
+
+            MenuBar {
+                this.Menu("File") {
+                    Item("Close", shortcut = KeyShortcut(Key.W, meta = true), onClick = {
+                        onHideWindow()
+                    })
                 }
             }
-        )
+        }
     }
 
     @Composable
