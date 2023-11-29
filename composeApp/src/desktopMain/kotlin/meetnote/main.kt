@@ -37,7 +37,7 @@ fun main() {
     val postProcessExecutor = Executors.newSingleThreadExecutor()
 
     val mainApp = MainApp(dataRepository)
-    val recorder = Recorder(dataRepository)
+    val recorder = Recorder(dataRepository, config)
 
     val windowNameCollector = WindowNameCollector()
 
@@ -88,6 +88,8 @@ fun main() {
                     ) {
                         logger.info("Selected mixer: $mixerInfo")
                         recorder.setMixer(mixerInfo)
+                        configRepository.saveConfiguration(configRepository.loadSettings()
+                            .copy(mixer = mixerInfo.name))
                         selectedMixer = mixerInfo
                     }
                 }

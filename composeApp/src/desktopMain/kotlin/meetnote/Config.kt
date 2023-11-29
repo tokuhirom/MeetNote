@@ -7,6 +7,8 @@ data class Config(
     var maxRecordingDuration: Duration = Duration.ofMinutes(30),
     var mp3bitRate: Int = 58, // [kbps]
 
+    var mixer: String? = null,
+
     var windowWatchConfig: WindowWatchConfig = WindowWatchConfig(),
 )
 

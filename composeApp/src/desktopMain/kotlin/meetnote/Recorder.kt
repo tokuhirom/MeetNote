@@ -22,6 +22,7 @@ data class RecordingState(
 
 class Recorder(
     private val dataRepository: DataRepository,
+    config: Config,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -32,9 +33,13 @@ class Recorder(
 
     private val availableMixers = AudioSystem.getMixerInfo()
 
-    var selectedMixer: Mixer.Info = availableMixers.firstOrNull {
-        it.name.equals("Aggregate Device")
-    } ?: availableMixers.first()
+    var selectedMixer: Mixer.Info = if (!config.mixer.isNullOrEmpty()) {
+        availableMixers.firstOrNull {
+            it.name.equals(config.mixer)
+        } ?: availableMixers.first()
+    } else {
+        availableMixers.first()
+    }
     private val dataLineInfo = DataLine.Info(TargetDataLine::class.java, format)
 
     private val recordingWriterExecutor = Executors.newSingleThreadExecutor()
