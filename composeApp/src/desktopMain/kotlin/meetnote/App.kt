@@ -249,6 +249,7 @@ class MainApp(private val dataRepository: DataRepository) {
                         logger.info("Converting $mp3Path to wave file")
                         val processBuilder = ProcessBuilder(
                             "lame",
+                            "--quiet",
                             "--decode",
                             mp3Path.toAbsolutePath().toString(),
                             tmpFile.toAbsolutePath().toString(),
