@@ -11,7 +11,7 @@ class WindowNameCollector {
 
     fun getWindowStateList(): List<WindowState> {
         val windowListString = getWindowListString()
-        logger.info("windowListString: $windowListString")
+//        logger.info("windowListString: $windowListString")
 
         return parseWindowState(windowListString)
     }
