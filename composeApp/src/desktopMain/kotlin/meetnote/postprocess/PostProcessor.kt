@@ -111,7 +111,7 @@ class PostProcessor(
             )
         )
         logger.info("Writing result to $mdPath")
-        mdPath.writeText(resp.choices[0].message.content!!)
+        mdPath.writeText(resp.choices[0].message.content)
     }
 
 }
