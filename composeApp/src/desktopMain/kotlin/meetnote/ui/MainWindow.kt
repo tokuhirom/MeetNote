@@ -14,6 +14,7 @@ import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
+import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -28,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyShortcut
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.MenuBar
@@ -85,6 +87,8 @@ fun ApplicationScope.mainWindow(
         val logger1 = LoggerFactory.getLogger("mainWindowBody")
         var showWindowListDialog by remember { mutableStateOf(false) }
         var showConfigurationDialog by remember { mutableStateOf(configRepository.loadSettings().apiToken.isNullOrBlank()) }
+        var showSearchForm by remember { mutableStateOf(false) }
+
         if (showWindowListDialog) {
             windowListDialog(windowNameCollector) {
                 showWindowListDialog = false
@@ -95,7 +99,13 @@ fun ApplicationScope.mainWindow(
                 showConfigurationDialog = false
             }
         }
+
         MenuBar {
+            Menu("Search") {
+                Item("Search by keyword", onClick = {
+                    showSearchForm = true
+                })
+            }
             Menu("Misc") {
                 Item("Window List", onClick = {
                     showWindowListDialog = true
@@ -130,6 +140,22 @@ fun ApplicationScope.mainWindow(
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                 if (postProcessor.state.isNotBlank()) {
                     Text(postProcessor.state, color = Color.Blue)
+                }
+
+                if (showSearchForm) {
+                    Row {
+                        TextField(value= TextFieldValue(""), onValueChange = {
+
+                        })
+
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        TextButton(onClick = {
+                            showSearchForm = false
+                        }) {
+                            Text("✗")
+                        }
+                    }
                 }
 
                 LazyColumn(modifier = Modifier.weight(1f)) {
