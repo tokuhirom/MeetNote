@@ -61,13 +61,17 @@ import kotlin.io.path.name
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
-data class LogEntry(val path: Path, var content: String) {
-    fun vttPath(): Path {
-        return path.resolveSibling(path.name.replace(".md", ".vtt"))
+data class LogEntry(val path: Path) {
+    val content: String by lazy {
+        path.readText()
     }
 
-    fun mp3Path(): Path {
-        return path.resolveSibling(path.name.replace(".md", ".mp3"))
+    val vttPath : Path by lazy {
+        path.resolveSibling(path.name.replace(".md", ".vtt"))
+    }
+
+    val mp3Path : Path by lazy {
+        path.resolveSibling(path.name.replace(".md", ".mp3"))
     }
 
     fun title(): String {
@@ -173,7 +177,7 @@ class MainApp(private val dataRepository: DataRepository) {
                                     }
                                 }
 
-                                if (log.vttPath().exists()) {
+                                if (log.vttPath.exists()) {
                                     var showVttWindow by remember { mutableStateOf(false) }
                                     Button(onClick = {
                                         showVttWindow = true
@@ -212,7 +216,6 @@ class MainApp(private val dataRepository: DataRepository) {
 @Composable
 fun vttWindow(log: LogEntry, onHideWindow: () -> Unit) {
     val logger = LoggerFactory.getLogger("vttWindow")
-    val vttPath = log.path.resolveSibling(log.path.name.replace(".md", ".vtt"))
 
     Window(
         onCloseRequest = { onHideWindow() },
@@ -225,7 +228,7 @@ fun vttWindow(log: LogEntry, onHideWindow: () -> Unit) {
             var playing by remember { mutableStateOf(false) }
             var seekToMicroSecond: Long? by remember { mutableStateOf(null) }
             var currentPosition: String? by remember { mutableStateOf(null) }
-            val hasMp3File = log.mp3Path().exists()
+            val hasMp3File = log.mp3Path.exists()
 
             LaunchedEffect(playing, seekToMicroSecond) {
                 if (playing) {
@@ -247,7 +250,7 @@ fun vttWindow(log: LogEntry, onHideWindow: () -> Unit) {
 
             LaunchedEffect(Unit) {
                 if (clip == null) {
-                    val mp3Path = log.mp3Path()
+                    val mp3Path = log.mp3Path
 
                     logger.info("Converting $mp3Path to wave file")
                     val processBuilder = ProcessBuilder(
@@ -309,7 +312,7 @@ fun vttWindow(log: LogEntry, onHideWindow: () -> Unit) {
             }
 
             LazyColumn {
-                val content = compactionWebVtt(parseWebVtt(vttPath.readText()))
+                val content = compactionWebVtt(parseWebVtt(log.vttPath.readText()))
                 items(content) { row ->
                     Row(modifier = Modifier.padding(4.dp)) {
                         if (hasMp3File) {
