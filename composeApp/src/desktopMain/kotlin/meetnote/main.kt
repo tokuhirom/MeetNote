@@ -1,4 +1,5 @@
 package meetnote
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -11,6 +12,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyShortcut
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
@@ -18,6 +20,7 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.aallam.openai.client.OpenAI
 import kotlinx.coroutines.runBlocking
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.Executors
 import javax.sound.sampled.AudioSystem
@@ -102,50 +105,65 @@ fun main() {
             }
         )
 
-        Window(onCloseRequest = ::exitApplication,
-            title = "MeetNote",
-            state = rememberWindowState(),
-            icon = painterResource("icons/icon.png")) {
-            var showWindowListDialog by remember { mutableStateOf(false) }
-            var showConfigurationDialog by remember { mutableStateOf(configRepository.loadSettings().apiToken.isNullOrBlank()) }
+        mainWindow(configRepository, logger, recorder, windowNameCollector, config, mainApp, postProcessor)
+    }
+}
 
-            LaunchedEffect(Unit) {
-                Thread {
-                    logger.info("Starting WindowNameRecorderController...")
+@Composable
+private fun ApplicationScope.mainWindow(
+    configRepository: ConfigRepository,
+    logger: Logger,
+    recorder: Recorder,
+    windowNameCollector: WindowNameCollector,
+    config: Config,
+    mainApp: MainApp,
+    postProcessor: PostProcessor
+) {
+    Window(
+        onCloseRequest = ::exitApplication,
+        title = "MeetNote",
+        state = rememberWindowState(),
+        icon = painterResource("icons/icon.png")
+    ) {
+        var showWindowListDialog by remember { mutableStateOf(false) }
+        var showConfigurationDialog by remember { mutableStateOf(configRepository.loadSettings().apiToken.isNullOrBlank()) }
 
-                    WindowNameRecorderController(
-                        recorder,
-                        windowNameCollector,
-                        config.windowWatchConfig.windowPatterns,
-                        watchInterval = config.windowWatchConfig.watchInterval,
-                        maxRecordingDuration = config.maxRecordingDuration,
-                    ).start()
-                }.start()
+        LaunchedEffect(Unit) {
+            Thread {
+                logger.info("Starting WindowNameRecorderController...")
+
+                WindowNameRecorderController(
+                    recorder,
+                    windowNameCollector,
+                    config.windowWatchConfig.windowPatterns,
+                    watchInterval = config.windowWatchConfig.watchInterval,
+                    maxRecordingDuration = config.maxRecordingDuration,
+                ).start()
+            }.start()
+        }
+
+        if (showWindowListDialog) {
+            windowListDialog(windowNameCollector) {
+                showWindowListDialog = false
             }
+        }
 
-            if (showWindowListDialog) {
-                windowListDialog(windowNameCollector) {
-                    showWindowListDialog = false
-                }
+        if (showConfigurationDialog) {
+            configurationDialog(configRepository) {
+                showConfigurationDialog = false
             }
+        }
 
-            if (showConfigurationDialog) {
-                configurationDialog(configRepository) {
-                    showConfigurationDialog = false
-                }
-            }
+        mainApp.app(postProcessor)
 
-            mainApp.app(postProcessor)
-
-            MenuBar {
-                this.Menu("Misc") {
-                    Item("Window List", onClick = {
-                        showWindowListDialog = true
-                    })
-                    Item("Configuration", shortcut = KeyShortcut(Key.Comma, meta = true), onClick = {
-                        showConfigurationDialog = true
-                    })
-                }
+        MenuBar {
+            this.Menu("Misc") {
+                Item("Window List", onClick = {
+                    showWindowListDialog = true
+                })
+                Item("Configuration", shortcut = KeyShortcut(Key.Comma, meta = true), onClick = {
+                    showConfigurationDialog = true
+                })
             }
         }
     }

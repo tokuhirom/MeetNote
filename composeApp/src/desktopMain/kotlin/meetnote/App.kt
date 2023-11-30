@@ -447,8 +447,4 @@ class MainApp(private val dataRepository: DataRepository) {
             }
         }.start()
     }
-
-    fun progressUpdate(progressMessage: String) {
-        TODO("Not yet implemented")
-    }
 }
