@@ -1,4 +1,4 @@
-package meetnote
+package meetnote.ui
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.rememberDialogState
+import meetnote.config.ConfigRepository
+import meetnote.recordercontroller.WindowPattern
 import org.slf4j.LoggerFactory
 import java.time.Duration
 import javax.swing.JOptionPane

@@ -1,4 +1,4 @@
-package meetnote
+package meetnote.config
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule

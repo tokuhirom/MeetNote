@@ -1,4 +1,4 @@
-package meetnote
+package meetnote.openai
 
 import io.ktor.client.*
 import io.ktor.client.plugins.*

@@ -1,4 +1,0 @@
-package meetnote
-
-fun editingDialog() {
-}

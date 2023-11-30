@@ -1,5 +1,7 @@
-package meetnote
+package meetnote.recordercontroller
 
+import meetnote.Recorder
+import meetnote.WindowNameCollector
 import org.slf4j.LoggerFactory
 import java.time.Duration
 

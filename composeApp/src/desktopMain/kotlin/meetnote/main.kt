@@ -17,6 +17,11 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.aallam.openai.client.OpenAI
 import kotlinx.coroutines.runBlocking
+import meetnote.config.Config
+import meetnote.config.ConfigRepository
+import meetnote.openai.OpenAICustomizedClient
+import meetnote.recordercontroller.WindowNameRecorderController
+import meetnote.ui.mainWindowBody
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.Executors

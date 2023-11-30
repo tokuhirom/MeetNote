@@ -1,5 +1,6 @@
-package meetnote
+package meetnote.config
 
+import meetnote.recordercontroller.WindowPattern
 import java.time.Duration
 
 data class Config(
