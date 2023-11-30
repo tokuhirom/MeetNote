@@ -36,11 +36,13 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyShortcut
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.Window
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import meetnote.model.LogEntry
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.FileSystems
@@ -61,151 +63,144 @@ import kotlin.io.path.name
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
-data class LogEntry(val path: Path) {
-    val content: String by lazy {
-        path.readText()
-    }
+@Composable
+fun FrameWindowScope.mainWindowBody(postProcessor: PostProcessor, dataRepository: DataRepository, windowNameCollector: WindowNameCollector, configRepository: ConfigRepository) {
+    val logger = LoggerFactory.getLogger("mainWindowBody")
 
-    val vttPath : Path by lazy {
-        path.resolveSibling(path.name.replace(".md", ".vtt"))
-    }
+    var showWindowListDialog by remember { mutableStateOf(false) }
+    var showConfigurationDialog by remember { mutableStateOf(configRepository.loadSettings().apiToken.isNullOrBlank()) }
 
-    val mp3Path : Path by lazy {
-        path.resolveSibling(path.name.replace(".md", ".mp3"))
-    }
-
-    fun title(): String {
-        val inputFileName = path.name
-
-        val datePart = inputFileName.substring(0, 8)  // "20230102"
-        val timePart = inputFileName.substring(8, 12)  // "0304"
-
-        val formattedDate = datePart.replaceRange(4, 4, "-").replaceRange(7, 7, "-")
-        val formattedTime = timePart.replaceRange(2, 2, ":")
-
-        return "$formattedDate $formattedTime"
-    }
-}
-
-class MainApp(private val dataRepository: DataRepository) {
-    private val logger = LoggerFactory.getLogger(javaClass)
-
-    private fun loadLogs(): List<LogEntry> {
-        return dataRepository.getRecentSummarizedFiles().map {
-            LogEntry(it, it.readText())
+    if (showWindowListDialog) {
+        windowListDialog(windowNameCollector) {
+            showWindowListDialog = false
         }
     }
 
-    @Composable
-    fun app(postProcessor: PostProcessor) {
-        MaterialTheme {
-            var logs by remember { mutableStateOf(loadLogs()) }
-            logger.info("Starting App!!")
+    if (showConfigurationDialog) {
+        configurationDialog(configRepository) {
+            showConfigurationDialog = false
+        }
+    }
 
-            val job = rememberCoroutineScope().launch(Dispatchers.IO) {
-                val path = dataRepository.getDataDirectory()
-                logger.info("Starting file watching coroutine...")
 
-                startFileWatcher(path) {
-                    logger.info("File changed. Reloading logs...")
-                    logs = loadLogs()
-                }
+    MenuBar {
+        this.Menu("Misc") {
+            Item("Window List", onClick = {
+                showWindowListDialog = true
+            })
+            Item("Configuration", shortcut = KeyShortcut(Key.Comma, meta = true), onClick = {
+                showConfigurationDialog = true
+            })
+        }
+    }
+
+    MaterialTheme {
+        var logs by remember { mutableStateOf(dataRepository.getRecentSummarizedLogs()) }
+        logger.info("Starting App!!")
+
+        val job = rememberCoroutineScope().launch(Dispatchers.IO) {
+            val path = dataRepository.getDataDirectory()
+            logger.info("Starting file watching coroutine...")
+
+            startFileWatcher(path) {
+                logger.info("File changed. Reloading logs...")
+                logs = dataRepository.getRecentSummarizedLogs()
+            }
+        }
+
+        DisposableEffect(Unit) {
+            onDispose {
+                logger.info("Stop watching file changes.")
+                job.cancel()
+            }
+        }
+
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            if (postProcessor.state.isNotBlank()) {
+                Text(postProcessor.state, color = Color.Blue)
             }
 
-            DisposableEffect(Unit) {
-                onDispose {
-                    logger.info("Stop watching file changes.")
-                    job.cancel()
-                }
-            }
-
-            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                if (postProcessor.state.isNotBlank()) {
-                    Text(postProcessor.state, color = Color.Blue)
-                }
-
-                LazyColumn(modifier = Modifier.weight(1f)) {
-                    items(logs) {log ->
-                        if (!log.path.isRegularFile()) {
-                            return@items
-                        }
-
-                        Column(modifier = Modifier.padding(4.dp)) {
-                            var isConfirmDialogOpen by remember { mutableStateOf(false) }
-
-                            if (isConfirmDialogOpen) {
-                                AlertDialog(
-                                    onDismissRequest = { isConfirmDialogOpen = false },
-                                    title = { Text("Delete Confirmation") },
-                                    text = { Text("Are you sure you want to delete ${log.path.name}?") },
-                                    confirmButton = {
-                                        TextButton(
-                                            onClick = {
-                                                deleteFileWithSameNameVtt(log.path.toFile())
-                                                isConfirmDialogOpen = false
-                                            }
-                                        ) {
-                                            Text("Yes")
-                                        }
-                                    },
-                                    dismissButton = {
-                                        TextButton(
-                                            onClick = { isConfirmDialogOpen = false }
-                                        ) {
-                                            Text("No")
-                                        }
-                                    }
-                                )
-                            }
-
-                            Row {
-                                Text(log.title())
-
-                                Spacer(modifier = Modifier.weight(1f))
-
-                                var showEditSummaryWindow by remember { mutableStateOf(false) }
-
-                                Button(onClick = {
-                                    showEditSummaryWindow = true
-                                }) {
-                                    Text("Edit Summary")
-                                }
-
-                                if (showEditSummaryWindow) {
-                                    editSummaryWindow(log) {
-                                        showEditSummaryWindow = false
-                                    }
-                                }
-
-                                if (log.vttPath.exists()) {
-                                    var showVttWindow by remember { mutableStateOf(false) }
-                                    Button(onClick = {
-                                        showVttWindow = true
-                                    }) {
-                                        Text("View raw log(VTT)")
-                                    }
-                                    if (showVttWindow) {
-                                        vttWindow(log) {
-                                            showVttWindow = false
-                                        }
-                                    }
-                                }
-
-                                Button(onClick = {
-                                    isConfirmDialogOpen = true
-                                }) {
-                                    Text("Delete")
-                                }
-                            }
-
-
-                            SelectionContainer {
-                                Text(log.content)
-                            }
-                        }
-
-                        Divider()
+            LazyColumn(modifier = Modifier.weight(1f)) {
+                items(logs) {log ->
+                    if (!log.path.isRegularFile()) {
+                        return@items
                     }
+
+                    Column(modifier = Modifier.padding(4.dp)) {
+                        var isConfirmDialogOpen by remember { mutableStateOf(false) }
+
+                        if (isConfirmDialogOpen) {
+                            AlertDialog(
+                                onDismissRequest = { isConfirmDialogOpen = false },
+                                title = { Text("Delete Confirmation") },
+                                text = { Text("Are you sure you want to delete ${log.path.name}?") },
+                                confirmButton = {
+                                    TextButton(
+                                        onClick = {
+                                            deleteFileWithSameNameVtt(log.path.toFile())
+                                            isConfirmDialogOpen = false
+                                        }
+                                    ) {
+                                        Text("Yes")
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(
+                                        onClick = { isConfirmDialogOpen = false }
+                                    ) {
+                                        Text("No")
+                                    }
+                                }
+                            )
+                        }
+
+                        Row {
+                            Text(log.title())
+
+                            Spacer(modifier = Modifier.weight(1f))
+
+                            var showEditSummaryWindow by remember { mutableStateOf(false) }
+
+                            Button(onClick = {
+                                showEditSummaryWindow = true
+                            }) {
+                                Text("Edit Summary")
+                            }
+
+                            if (showEditSummaryWindow) {
+                                editSummaryWindow(log) {
+                                    showEditSummaryWindow = false
+                                }
+                            }
+
+                            if (log.vttPath.exists()) {
+                                var showVttWindow by remember { mutableStateOf(false) }
+                                Button(onClick = {
+                                    showVttWindow = true
+                                }) {
+                                    Text("View raw log(VTT)")
+                                }
+                                if (showVttWindow) {
+                                    vttWindow(log) {
+                                        showVttWindow = false
+                                    }
+                                }
+                            }
+
+                            Button(onClick = {
+                                isConfirmDialogOpen = true
+                            }) {
+                                Text("Delete")
+                            }
+                        }
+
+
+                        SelectionContainer {
+                            Text(log.content)
+                        }
+                    }
+
+                    Divider()
                 }
             }
         }
@@ -358,7 +353,7 @@ fun editSummaryWindow(
     fun saveContent() {
         log.path.writeText(content)
         isDirty = false
-        log.content = content
+        log.reloadContent()
     }
 
     Window(

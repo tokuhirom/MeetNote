@@ -1,5 +1,6 @@
 package meetnote
 
+import meetnote.model.LogEntry
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -45,5 +46,9 @@ class DataRepository {
             .filter { it.isRegularFile() && it.name.endsWith(".md") }
             .sorted { p1, p2 -> p2.fileName.compareTo(p1.fileName) }
             .toList()
+    }
+
+    fun getRecentSummarizedLogs(): List<LogEntry> {
+        return getRecentSummarizedFiles().map { LogEntry(it) }
     }
 }

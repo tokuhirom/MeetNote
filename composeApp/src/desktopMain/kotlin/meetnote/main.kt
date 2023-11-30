@@ -9,11 +9,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyShortcut
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.ApplicationScope
-import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
@@ -39,7 +36,6 @@ fun main() {
     postProcessingResumer.start()
     val postProcessExecutor = Executors.newSingleThreadExecutor()
 
-    val mainApp = MainApp(dataRepository)
     val recorder = Recorder(dataRepository, config)
 
     val windowNameCollector = WindowNameCollector()
@@ -105,7 +101,7 @@ fun main() {
             }
         )
 
-        mainWindow(configRepository, logger, recorder, windowNameCollector, config, mainApp, postProcessor)
+        mainWindow(configRepository, logger, recorder, windowNameCollector, config, dataRepository, postProcessor)
     }
 }
 
@@ -116,7 +112,7 @@ private fun ApplicationScope.mainWindow(
     recorder: Recorder,
     windowNameCollector: WindowNameCollector,
     config: Config,
-    mainApp: MainApp,
+    dataRepository: DataRepository,
     postProcessor: PostProcessor
 ) {
     Window(
@@ -125,8 +121,6 @@ private fun ApplicationScope.mainWindow(
         state = rememberWindowState(),
         icon = painterResource("icons/icon.png")
     ) {
-        var showWindowListDialog by remember { mutableStateOf(false) }
-        var showConfigurationDialog by remember { mutableStateOf(configRepository.loadSettings().apiToken.isNullOrBlank()) }
 
         LaunchedEffect(Unit) {
             Thread {
@@ -142,30 +136,7 @@ private fun ApplicationScope.mainWindow(
             }.start()
         }
 
-        if (showWindowListDialog) {
-            windowListDialog(windowNameCollector) {
-                showWindowListDialog = false
-            }
-        }
-
-        if (showConfigurationDialog) {
-            configurationDialog(configRepository) {
-                showConfigurationDialog = false
-            }
-        }
-
-        mainApp.app(postProcessor)
-
-        MenuBar {
-            this.Menu("Misc") {
-                Item("Window List", onClick = {
-                    showWindowListDialog = true
-                })
-                Item("Configuration", shortcut = KeyShortcut(Key.Comma, meta = true), onClick = {
-                    showConfigurationDialog = true
-                })
-            }
-        }
+        mainWindowBody(postProcessor, dataRepository, windowNameCollector, configRepository)
     }
 }
 
