@@ -1,6 +1,4 @@
 package meetnote
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -9,22 +7,15 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.Tray
-import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-import androidx.compose.ui.window.rememberWindowState
 import com.aallam.openai.client.OpenAI
 import kotlinx.coroutines.runBlocking
-import meetnote.config.Config
 import meetnote.config.ConfigRepository
 import meetnote.openai.OpenAICustomizedClient
 import meetnote.postprocess.PostProcessingResumer
 import meetnote.postprocess.PostProcessor
-import meetnote.recordercontroller.WindowNameRecorderController
-import meetnote.ui.mainWindowBody
-import org.slf4j.Logger
+import meetnote.ui.mainWindow
 import org.slf4j.LoggerFactory
 import java.util.concurrent.Executors
 import javax.sound.sampled.AudioSystem
@@ -109,41 +100,6 @@ fun main() {
         )
 
         mainWindow(configRepository, logger, recorder, windowNameCollector, config, dataRepository, postProcessor)
-    }
-}
-
-@Composable
-private fun ApplicationScope.mainWindow(
-    configRepository: ConfigRepository,
-    logger: Logger,
-    recorder: Recorder,
-    windowNameCollector: WindowNameCollector,
-    config: Config,
-    dataRepository: DataRepository,
-    postProcessor: PostProcessor
-) {
-    Window(
-        onCloseRequest = ::exitApplication,
-        title = "MeetNote",
-        state = rememberWindowState(),
-        icon = painterResource("icons/icon.png")
-    ) {
-
-        LaunchedEffect(Unit) {
-            Thread {
-                logger.info("Starting WindowNameRecorderController...")
-
-                WindowNameRecorderController(
-                    recorder,
-                    windowNameCollector,
-                    config.windowWatchConfig.windowPatterns,
-                    watchInterval = config.windowWatchConfig.watchInterval,
-                    maxRecordingDuration = config.maxRecordingDuration,
-                ).start()
-            }.start()
-        }
-
-        mainWindowBody(postProcessor, dataRepository, windowNameCollector, configRepository)
     }
 }
 
