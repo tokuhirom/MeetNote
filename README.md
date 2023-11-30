@@ -23,7 +23,7 @@ To get the list of windows, this application requires the "Accessibility" permis
 
     brew install lame
 
-- MeetNote uses Lame to convert mp3 files to wave files, and also utilizes it to revert wave files back to mp3.
+- MeetNote uses Lame to convert raw files to mp3 files, and also utilizes it to revert mp3 files back to wav.
 
 ### Blackhole or something other
 

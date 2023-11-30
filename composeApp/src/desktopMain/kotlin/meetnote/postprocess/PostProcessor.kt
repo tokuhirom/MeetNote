@@ -3,67 +3,68 @@ package meetnote.postprocess
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import meetnote.audio.rms
+import meetnote.audio.audioRms
 import meetnote.openai.ChatCompletionRequest
 import meetnote.openai.Message
 import meetnote.openai.OpenAICustomizedClient
 import org.slf4j.LoggerFactory
 import java.io.InputStreamReader
 import java.nio.file.Path
-import javax.sound.sampled.AudioSystem
 import kotlin.io.path.fileSize
+import kotlin.io.path.inputStream
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 class PostProcessor(
     private val openAICustomizedClient: OpenAICustomizedClient,
-    private val mp3bitRate: Int
+    private val mp3bitRate: Int,
+    private val rawSampleRate: Int,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
     var state by mutableStateOf("")
 
-    suspend fun process(wavePath: Path) {
-        logger.info("Starting post-processing: $wavePath")
-        state = "Starting post-processing: $wavePath"
+    suspend fun process(rawPath: Path) {
+        logger.info("Starting post-processing: $rawPath")
+        state = "Starting post-processing: $rawPath"
 
-        val rms = getRms(wavePath)
-        logger.info("The files RMS is $rms: $wavePath")
+        val rms = getRms(rawPath)
+        logger.info("The files RMS is $rms: $rawPath")
         if (rms == 0.0) { // maybe < 0.02 is good enough.
-            logger.info("This file does not contain sound. $wavePath")
-            cleanup(wavePath)
+            logger.info("This file does not contain sound. $rawPath")
+            cleanup(rawPath)
             state = ""
             return
         }
 
-        val mp3Path = convertToMp3(wavePath)
+        val mp3Path = convertToMp3(rawPath)
 
         val txtFilePath = speechToText(mp3Path)
         summarize(txtFilePath)
 
-        cleanup(wavePath)
+        cleanup(rawPath)
         state = ""
     }
 
-    private fun getRms(wavePath: Path): Double {
-        AudioSystem.getAudioInputStream(wavePath.toFile()).use {
-            return it.rms()
+    private fun getRms(rawPath: Path): Double {
+        rawPath.inputStream().use {
+            return audioRms(it.readAllBytes())
         }
     }
 
-    private fun cleanup(wavePath: Path) {
-        logger.info("Removing used files: $wavePath")
-        wavePath.toFile().delete()
+    private fun cleanup(rawPath: Path) {
+        logger.info("Removing used files: $rawPath")
+        rawPath.toFile().delete()
     }
 
-    private fun convertToMp3(wavePath: Path): Path {
-        val mp3Path = wavePath.resolveSibling("${wavePath.fileName.toString().dropLast(4)}.mp3")
+    private fun convertToMp3(rawPath: Path): Path {
+        val mp3Path = rawPath.resolveSibling("${rawPath.fileName.toString().dropLast(4)}.mp3")
 
         state = "lame processing..."
-        logger.info("Converting $wavePath(${wavePath.fileSize()} bytes) to mp3. bitrate: $mp3bitRate")
+        logger.info("Converting $rawPath(${rawPath.fileSize()} bytes) to mp3. bitrate: $mp3bitRate")
 
         try {
             // --abr: average bitrate
-            val processBuilder = ProcessBuilder("lame", "--verbose", "-v", "--abr", mp3bitRate.toString(), "-m", "m", wavePath.toString(), mp3Path.toString())
+            val processBuilder = ProcessBuilder("lame", "--verbose", "-r", "-s", rawSampleRate.toString(), "-v", "--abr", mp3bitRate.toString(), "-m", "m", rawPath.toString(), mp3Path.toString())
             processBuilder.redirectErrorStream(true)
             val process = processBuilder.start()
             val reader = InputStreamReader(process.inputStream)
@@ -77,10 +78,10 @@ class PostProcessor(
             if (exitCode != 0) {
                 logger.error("Error during mp3 conversion. Exit code: $exitCode.")
             } else {
-                logger.info("Converted to mp3: $mp3Path(${mp3Path.fileSize()} bytes) from $wavePath(${wavePath.fileSize()} bytes)")
+                logger.info("Converted to mp3: $mp3Path(${mp3Path.fileSize()} bytes) from $rawPath(${rawPath.fileSize()} bytes)")
             }
         } catch (ex: Exception) {
-            logger.error("Failed to convert wave file. Error: ${ex.message}", ex)
+            logger.error("Failed to convert raw file. Error: ${ex.message}", ex)
         }
         return mp3Path
     }

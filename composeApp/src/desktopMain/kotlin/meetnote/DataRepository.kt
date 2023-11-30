@@ -10,16 +10,16 @@ import kotlin.io.path.isRegularFile
 import kotlin.io.path.name
 
 class DataRepository {
-    fun getNewWaveFilePath(): Path {
+    fun getNewRawFilePath(): Path {
         val currentDateTime = LocalDateTime.now()
         val formatter = DateTimeFormatter.ofPattern("yyyyMMdd/yyyyMMddHHmmss")
         val formattedDateTime = currentDateTime.format(formatter)
-        val path = getDataDirectory().resolve("$formattedDateTime.wav")
+        val path = getDataDirectory().resolve("$formattedDateTime.raw")
         path.parent.toFile().mkdirs()
         return path
     }
 
-    fun getUnprocessedWaveFiles(): List<Path> {
+    fun getUnprocessedRawFiles(): List<Path> {
         val dataDirectory = getDataDirectory()
         if (!dataDirectory.toFile().exists()) {
             return emptyList()
@@ -27,7 +27,7 @@ class DataRepository {
 
         return Files.walk(dataDirectory)
             .filter {
-                it.isRegularFile() && it.fileName.toString().endsWith(".wav")
+                it.isRegularFile() && it.fileName.toString().endsWith(".raw")
             }
             .toList()
     }

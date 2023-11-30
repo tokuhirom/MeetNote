@@ -88,10 +88,10 @@ fun vttWindow(log: LogEntry, onHideWindow: () -> Unit) {
                     )
                     processBuilder.redirectError()
                     val process = processBuilder.start()
-                    val mpg123log = String(process.inputStream.readAllBytes())
+                    val lameLog = String(process.inputStream.readAllBytes())
                     val exitCode = process.waitFor()
                     if (exitCode != 0) {
-                        logger.error("Cannot convert mp3 to wave file: $mpg123log")
+                        logger.error("Cannot convert mp3 to wave file: $lameLog")
                     } else {
                         logger.info("Converted ${log.mp3Path} to $tmpFile")
                     }

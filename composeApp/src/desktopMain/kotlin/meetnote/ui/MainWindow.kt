@@ -16,12 +16,10 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,9 +33,8 @@ import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.rememberWindowState
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import meetnote.DataRepository
+import meetnote.FileWatcher
 import meetnote.Recorder
 import meetnote.WindowNameCollector
 import meetnote.config.Config
@@ -47,7 +44,6 @@ import meetnote.deleteFileWithSameNameVtt
 import meetnote.postprocess.PostProcessor
 import meetnote.recordercontroller.HighCpuUsageRecorderController
 import meetnote.recordercontroller.WindowNameRecorderController
-import meetnote.startFileWatcher
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.io.path.exists
@@ -62,7 +58,8 @@ fun ApplicationScope.mainWindow(
     windowNameCollector: WindowNameCollector,
     config: Config,
     dataRepository: DataRepository,
-    postProcessor: PostProcessor
+    postProcessor: PostProcessor,
+    fileWatcher: FileWatcher
 ) {
     Window(
         onCloseRequest = ::exitApplication,
@@ -132,23 +129,10 @@ fun ApplicationScope.mainWindow(
         MaterialTheme {
             var logs by remember { mutableStateOf(dataRepository.getRecentSummarizedLogs()) }
             var searchKeyword by remember { mutableStateOf(TextFieldValue("")) }
-            logger1.info("Starting App!!")
 
-            val job = rememberCoroutineScope().launch(Dispatchers.IO) {
-                val path = dataRepository.getDataDirectory()
-                logger1.info("Starting file watching coroutine...")
-
-                startFileWatcher(path) {
-                    logger1.info("File changed. Reloading logs...")
-                    logs = dataRepository.getRecentSummarizedLogs()
-                }
-            }
-
-            DisposableEffect(Unit) {
-                onDispose {
-                    logger1.info("Stop watching file changes.")
-                    job.cancel()
-                }
+            fileWatcher.callback = {
+                logger1.info("File changed. Reloading logs...")
+                logs = dataRepository.getRecentSummarizedLogs()
             }
 
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {

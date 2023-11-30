@@ -11,7 +11,7 @@ class PostProcessingResumer(private val dataRepository: DataRepository, private 
 
     fun start() {
         executors.submit {
-            val files = dataRepository.getUnprocessedWaveFiles()
+            val files = dataRepository.getUnprocessedRawFiles()
             logger.info("Resuming processing ${files.size} files")
 
             files.forEach { file ->

@@ -2,17 +2,20 @@ package meetnote
 
 import meetnote.config.Config
 import org.slf4j.LoggerFactory
+import java.io.FileOutputStream
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.Executors
-import javax.sound.sampled.AudioFileFormat
 import javax.sound.sampled.AudioFormat
-import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.DataLine
 import javax.sound.sampled.Mixer
 import javax.sound.sampled.TargetDataLine
+import kotlin.math.log10
+import kotlin.math.sqrt
 
 
 data class RecordingState(
@@ -27,10 +30,11 @@ class Recorder(
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    private val format = AudioFormat(16000.0f, 16, 2, true, true)
+    private val format = AudioFormat(config.rawSampleRate * 1000f, 16, 1, true, false)  // Mono, 16-bit, 16kHz, signed, little endian
 
     lateinit var onStartRecording: (Path) -> Unit
     lateinit var onStopRecording: (Path) -> Unit
+    lateinit var onVolumeChecked: (Int) -> Unit
 
     private val availableMixers = AudioSystem.getMixerInfo()
 
@@ -59,7 +63,7 @@ class Recorder(
             stopRecording()
         }
 
-        val path = dataRepository.getNewWaveFilePath()
+        val path = dataRepository.getNewRawFilePath()
 
         logger.info("Starting recording from ${selectedMixer.name}. path=$path")
         NotificationSender.sendMessage("Starting recording from ${selectedMixer.name}. path=$path")
@@ -70,7 +74,34 @@ class Recorder(
 
         recordingState = RecordingState(line, path)
         recordingWriterExecutor.submit {
-            val out = AudioSystem.write(AudioInputStream(line), AudioFileFormat.Type.WAVE, path.toFile())
+            var out = 0
+
+            FileOutputStream(path.toFile()).use { fos ->
+                val buffer = ByteArray(line.bufferSize)
+                while (true) {
+                    // Read data from the line
+                    val bytesRead = line.read(buffer, 0, buffer.size)
+                    if (bytesRead <= 0) break
+
+                    // Calculate the volume based on the data and print it
+                    val shortBuffer = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer()
+                    var sum = 0.0
+                    while (shortBuffer.hasRemaining()) {
+                        val amptitude = shortBuffer.get().toDouble()
+                        sum += amptitude * amptitude
+                    }
+                    val rms = sqrt(sum / bytesRead)
+                    val db = 20.0 * log10(rms)
+                    logger.debug("Volume: $db dB")
+                    onVolumeChecked(db.toInt())
+
+                    // Write the data to the temporary file
+                    fos.write(buffer, 0, bytesRead)
+
+                    out += bytesRead
+                }
+            }
+
             logger.info("Wrote $path: $out bytes")
         }
 

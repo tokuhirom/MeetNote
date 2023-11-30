@@ -13,6 +13,7 @@ data class Config(
     var apiToken: String? = null,
     var maxRecordingDuration: Duration = Duration.ofMinutes(30),
     var mp3bitRate: Int = 58, // [kbps]
+    var rawSampleRate: Int = 16, // [kbps]
 
     var mixer: String? = null,
     var maxMp3StorageCapacityMegabyte: Long = 750,

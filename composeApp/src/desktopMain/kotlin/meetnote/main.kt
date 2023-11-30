@@ -3,9 +3,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.application
@@ -29,7 +31,7 @@ fun main() {
     val config = configRepository.loadSettings()
     val dataRepository = DataRepository()
     val openAICustomizedClient = OpenAICustomizedClient(config.apiToken!!)
-    val postProcessor = PostProcessor(openAICustomizedClient, config.mp3bitRate)
+    val postProcessor = PostProcessor(openAICustomizedClient, config.mp3bitRate, config.rawSampleRate)
     val postProcessingResumer = PostProcessingResumer(dataRepository, postProcessor)
     postProcessingResumer.start()
     val postProcessExecutor = Executors.newSingleThreadExecutor()
@@ -40,9 +42,16 @@ fun main() {
 
     Mp3CleanupProcessor().run(dataRepository, config)
 
+    val fileWatcher = FileWatcher(dataRepository.getDataDirectory())
+    fileWatcher.start()
+
     application {
         var isRecording by remember { mutableStateOf(false) }
+        var currentVolume: Int? by remember { mutableStateOf(null) }
 
+        recorder.onVolumeChecked = {
+            currentVolume = it
+        }
         recorder.onStartRecording = {
             isRecording = true
         }
@@ -58,11 +67,8 @@ fun main() {
 
         Tray(
             icon = TrayIcon(
-                if (isRecording) {
-                    Color(0xFFFF0000)
-                } else {
-                    Color.Gray
-                }
+                isRecording,
+                currentVolume
             ),
             menu = {
                 Item("MeetNote") {
@@ -101,14 +107,38 @@ fun main() {
             }
         )
 
-        mainWindow(configRepository, logger, recorder, windowNameCollector, config, dataRepository, postProcessor)
+        mainWindow(configRepository, logger, recorder, windowNameCollector, config, dataRepository, postProcessor, fileWatcher)
     }
 }
 
-class TrayIcon(private val color: Color) : Painter() {
-    override val intrinsicSize = Size(256f, 256f)
+class TrayIcon(
+    private val isRecording: Boolean,
+    private val currentVolume: Int? // [db]
+) : Painter() {
+    override val intrinsicSize = Size(40f, 40f)
 
     override fun DrawScope.onDraw() {
-        drawOval(color)
+        if (isRecording) {
+            // 20db のときを 20%, 100db のときを 100% になるように調整してみる。
+            val heightPercent = (currentVolume ?: 0) / 100.0f * intrinsicSize.height
+            println("current=$currentVolume, hp=$heightPercent")
+            drawRect(
+                color = Color.Green,
+                topLeft = Offset(0f, intrinsicSize.height - heightPercent),  // Draw from bottom up
+                size = Size(intrinsicSize.width, heightPercent),
+                style = Fill
+            )
+        } else {
+            drawRect(
+                color = Color.Gray,
+                topLeft = Offset(0f, 10f),
+                size = Size(15f, 25f)
+            )
+            drawRect(
+                color = Color.Gray,
+                topLeft = Offset(30f, 10f),
+                size = Size(15f, 25f)
+            )
+        }
     }
 }
