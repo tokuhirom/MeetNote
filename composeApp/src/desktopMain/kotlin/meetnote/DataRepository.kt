@@ -25,18 +25,18 @@ class DataRepository {
             return emptyList()
         }
 
-        return dataDirectory.toFile().listFiles()?.filter {
-            it.isFile && it.name.endsWith(".wav")
-        }?.map {
-            it.toPath()
-        } ?: emptyList()
+        return Files.walk(dataDirectory)
+            .filter {
+                it.isRegularFile() && it.fileName.toString().endsWith(".wav")
+            }
+            .toList()
     }
 
     fun getDataDirectory() : Path {
         return Paths.get(System.getProperty("user.home")).resolve("MeetNote")
     }
 
-    fun getRecentSummarizedFiles(): List<Path> {
+    private fun getRecentSummarizedFiles(): List<Path> {
         val dataDirectory = getDataDirectory()
         if (!dataDirectory.toFile().exists()) {
             return emptyList()
