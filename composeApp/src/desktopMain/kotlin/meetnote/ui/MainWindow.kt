@@ -73,7 +73,7 @@ fun ApplicationScope.mainWindow(
 
         LaunchedEffect(Unit) {
             Thread {
-                logger.info("Starting WindowNameRecorderController...")
+                logger.info("Starting recorder controller: ${config.recorderControllerType}")
 
                 when (config.recorderControllerType) {
                     RecorderControllerType.PROCESS -> {
