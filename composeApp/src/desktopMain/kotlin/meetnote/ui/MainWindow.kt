@@ -118,6 +118,7 @@ fun ApplicationScope.mainWindow(
 
         MaterialTheme {
             var logs by remember { mutableStateOf(dataRepository.getRecentSummarizedLogs()) }
+            var searchKeyword by remember { mutableStateOf(TextFieldValue("")) }
             logger1.info("Starting App!!")
 
             val job = rememberCoroutineScope().launch(Dispatchers.IO) {
@@ -144,8 +145,8 @@ fun ApplicationScope.mainWindow(
 
                 if (showSearchForm) {
                     Row {
-                        TextField(value= TextFieldValue(""), onValueChange = {
-
+                        TextField(value= searchKeyword, onValueChange = {
+                            searchKeyword = it
                         })
 
                         Spacer(modifier = Modifier.weight(1f))
@@ -161,6 +162,9 @@ fun ApplicationScope.mainWindow(
                 LazyColumn(modifier = Modifier.weight(1f)) {
                     items(logs) { log ->
                         if (!log.path.isRegularFile()) {
+                            return@items
+                        }
+                        if (searchKeyword.text.isNotBlank() && !log.content.contains(searchKeyword.text)) {
                             return@items
                         }
 
