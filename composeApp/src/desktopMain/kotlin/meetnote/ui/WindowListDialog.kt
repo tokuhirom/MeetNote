@@ -1,4 +1,4 @@
-package meetnote
+package meetnote.ui
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,6 +23,7 @@ import androidx.compose.ui.window.DialogWindow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import meetnote.WindowNameCollector
 
 @Composable
 fun windowListDialog(windowNameCollector: WindowNameCollector, onCloseRequest: () -> Unit) {

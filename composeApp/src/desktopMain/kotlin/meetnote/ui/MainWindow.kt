@@ -46,7 +46,7 @@ import meetnote.deleteFileWithSameNameVtt
 import meetnote.postprocess.PostProcessor
 import meetnote.recordercontroller.WindowNameRecorderController
 import meetnote.startFileWatcher
-import meetnote.windowListDialog
+import meetnote.ui.windowListDialog
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.io.path.exists
