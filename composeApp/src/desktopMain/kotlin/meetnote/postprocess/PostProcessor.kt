@@ -3,12 +3,14 @@ package meetnote.postprocess
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import meetnote.audio.rms
 import meetnote.openai.ChatCompletionRequest
 import meetnote.openai.Message
 import meetnote.openai.OpenAICustomizedClient
 import org.slf4j.LoggerFactory
 import java.io.InputStreamReader
 import java.nio.file.Path
+import javax.sound.sampled.AudioSystem
 import kotlin.io.path.fileSize
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
@@ -24,17 +26,32 @@ class PostProcessor(
         logger.info("Starting post-processing: $wavePath")
         state = "Starting post-processing: $wavePath"
 
+        val rms = getRms(wavePath)
+        logger.info("The files RMS is $rms: $wavePath")
+        if (rms == 0.0) { // maybe < 0.02 is good enough.
+            logger.info("This file does not contain sound. $wavePath")
+            cleanup(wavePath)
+            state = ""
+            return
+        }
+
         val mp3Path = convertToMp3(wavePath)
 
         val txtFilePath = speechToText(mp3Path)
         summarize(txtFilePath)
 
-        cleanup(wavePath, mp3Path)
+        cleanup(wavePath)
         state = ""
     }
 
-    private fun cleanup(wavePath: Path, mp3Path: Path) {
-        logger.info("Removing used files: $wavePath, $mp3Path")
+    private fun getRms(wavePath: Path): Double {
+        AudioSystem.getAudioInputStream(wavePath.toFile()).use {
+            return it.rms()
+        }
+    }
+
+    private fun cleanup(wavePath: Path) {
+        logger.info("Removing used files: $wavePath")
         wavePath.toFile().delete()
     }
 
