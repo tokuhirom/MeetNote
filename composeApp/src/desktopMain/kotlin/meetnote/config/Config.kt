@@ -15,6 +15,7 @@ data class Config(
     var mp3bitRate: Int = 58, // [kbps]
 
     var mixer: String? = null,
+    var maxMp3StorageCapacityMegabyte: Long = 750,
 
     var recorderControllerType: RecorderControllerType = RecorderControllerType.PROCESS,
     var highCpuUsageConfig: HighCpuUsageConfig = HighCpuUsageConfig(),

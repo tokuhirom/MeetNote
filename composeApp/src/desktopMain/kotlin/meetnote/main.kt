@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.application
 import kotlinx.coroutines.runBlocking
+import meetnote.cleanup.Mp3CleanupProcessor
 import meetnote.config.ConfigRepository
 import meetnote.openai.OpenAICustomizedClient
 import meetnote.postprocess.PostProcessingResumer
@@ -36,6 +37,8 @@ fun main() {
     val recorder = Recorder(dataRepository, config)
 
     val windowNameCollector = WindowNameCollector()
+
+    Mp3CleanupProcessor().run(dataRepository, config)
 
     application {
         var isRecording by remember { mutableStateOf(false) }

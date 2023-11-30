@@ -76,15 +76,14 @@ fun vttWindow(log: LogEntry, onHideWindow: () -> Unit) {
             }
 
             LaunchedEffect(Unit) {
-                if (clip == null) {
-                    val mp3Path = log.mp3Path
+                if (clip == null && log.mp3Path.exists()) {
 
-                    logger.info("Converting $mp3Path to wave file")
+                    logger.info("Converting ${log.mp3Path} to wave file")
                     val processBuilder = ProcessBuilder(
                         "lame",
                         "--quiet",
                         "--decode",
-                        mp3Path.toAbsolutePath().toString(),
+                        log.mp3Path.toAbsolutePath().toString(),
                         tmpFile.toAbsolutePath().toString(),
                     )
                     processBuilder.redirectError()
@@ -94,7 +93,7 @@ fun vttWindow(log: LogEntry, onHideWindow: () -> Unit) {
                     if (exitCode != 0) {
                         logger.error("Cannot convert mp3 to wave file: $mpg123log")
                     } else {
-                        logger.info("Converted $mp3Path to $tmpFile")
+                        logger.info("Converted ${log.mp3Path} to $tmpFile")
                     }
 
                     audioInputStream = AudioSystem.getAudioInputStream(tmpFile.toFile())
