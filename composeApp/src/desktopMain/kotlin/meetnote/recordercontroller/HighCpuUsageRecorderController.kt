@@ -9,6 +9,8 @@ import java.util.*
 
 data class ProcessPattern(var processName: String, var cpuUsageThreshold: Double)
 
+data class RecordingReason(val processPattern: ProcessPattern, val cpuUsage: Double)
+
 class HighCpuUsageRecorderController(
     private val recorder: Recorder,
     private val processPatterns: List<ProcessPattern>,
@@ -23,7 +25,8 @@ class HighCpuUsageRecorderController(
         while (true) {
             try {
                 if (recorder.inRecording()) { // in recording
-                    if (!shouldRecording()) {
+                    val (shouldRecord, _) = shouldRecording()
+                    if (!shouldRecord) {
                         // 録音を終了する
                         recorder.stopRecording()
                     } else if (recorder.recordingDuration() > maxRecordingDuration) {
@@ -36,9 +39,10 @@ class HighCpuUsageRecorderController(
                         recorder.startRecording()
                     }
                 } else { // not recording
-                    if (shouldRecording()) {
+                    val (shouldRecord, reason) = shouldRecording()
+                    if (shouldRecord) {
                         if (!recorder.inRecording()) {
-                            logger.info("High CPU usage detected. Starting recording...")
+                            logger.info("High CPU usage detected. Starting recording...: $reason")
                             recorder.startRecording()
                         }
                     }
@@ -51,18 +55,18 @@ class HighCpuUsageRecorderController(
         }
     }
 
-    private fun shouldRecording(): Boolean {
-        val cpuUsage = getCpuUsage()
+    private fun shouldRecording(): Pair<Boolean, RecordingReason?> {
+        val (cpuUsage, reason) = getCpuUsage()
 
         // Continue recording if any of the recent measurements exceeds the threshold.
         if (cpuUsagesHistory.size >= measureInterval) {
             cpuUsagesHistory.remove()
         }
         cpuUsagesHistory.add(cpuUsage)
-        return cpuUsagesHistory.any { it }
+        return cpuUsagesHistory.any { it } to reason
     }
 
-    private fun getCpuUsage(): Boolean {
+    private fun getCpuUsage(): Pair<Boolean, RecordingReason?> {
         val processBuilder = ProcessBuilder("ps", "aux")
         val process = processBuilder.start()
         val reader = BufferedReader(InputStreamReader(process.inputStream))
@@ -73,13 +77,13 @@ class HighCpuUsageRecorderController(
                         val usage = line.split("\\s+".toRegex())[2].toDoubleOrNull()
                         if (usage != null && usage > processPattern.cpuUsageThreshold) {
                             logger.debug("${processPattern.processName} cpu usage is $usage. It's greater than ${processPattern.cpuUsageThreshold}")
-                            return true
+                            return true to RecordingReason(processPattern, usage)
                         }
                     }
                 }
             }
         }
 
-        return false
+        return false to null
     }
 }
