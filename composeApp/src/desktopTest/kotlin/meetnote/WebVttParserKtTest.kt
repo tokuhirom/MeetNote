@@ -3,6 +3,8 @@ package meetnote
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import meetnote.vtt.Subtitle
+import meetnote.vtt.compactionWebVtt
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.LocalTime
@@ -21,7 +23,7 @@ class WebVttParserKtTest {
             なるほどですね。
         """.trimIndent()
 
-        val result = parseWebVtt(inputStr)
+        val result = meetnote.vtt.parseWebVtt(inputStr)
 
         assertEquals(2, result.size)
 

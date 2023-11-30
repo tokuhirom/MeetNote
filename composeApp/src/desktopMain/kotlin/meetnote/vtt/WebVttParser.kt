@@ -1,4 +1,4 @@
-package meetnote
+package meetnote.vtt
 
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter

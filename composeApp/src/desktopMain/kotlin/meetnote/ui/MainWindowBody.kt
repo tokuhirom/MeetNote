@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button
@@ -15,9 +16,11 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,11 +31,11 @@ import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.MenuBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import meetnote.config.ConfigRepository
 import meetnote.DataRepository
-import meetnote.PostProcessor
 import meetnote.WindowNameCollector
+import meetnote.config.ConfigRepository
 import meetnote.deleteFileWithSameNameVtt
+import meetnote.postprocess.PostProcessor
 import meetnote.startFileWatcher
 import meetnote.windowListDialog
 import org.slf4j.LoggerFactory

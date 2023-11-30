@@ -20,6 +20,8 @@ import kotlinx.coroutines.runBlocking
 import meetnote.config.Config
 import meetnote.config.ConfigRepository
 import meetnote.openai.OpenAICustomizedClient
+import meetnote.postprocess.PostProcessingResumer
+import meetnote.postprocess.PostProcessor
 import meetnote.recordercontroller.WindowNameRecorderController
 import meetnote.ui.mainWindowBody
 import org.slf4j.Logger

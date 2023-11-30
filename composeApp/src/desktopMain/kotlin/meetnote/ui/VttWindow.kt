@@ -13,8 +13,10 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyShortcut
@@ -22,9 +24,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.Window
 import kotlinx.coroutines.delay
-import meetnote.compactionWebVtt
 import meetnote.model.LogEntry
-import meetnote.parseWebVtt
+import meetnote.vtt.compactionWebVtt
+import meetnote.vtt.parseWebVtt
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.time.LocalTime
