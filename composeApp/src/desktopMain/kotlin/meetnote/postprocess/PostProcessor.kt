@@ -3,11 +3,8 @@ package meetnote.postprocess
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.aallam.openai.api.chat.ChatRole
-import com.aallam.openai.api.chat.chatCompletionRequest
-import com.aallam.openai.api.chat.chatMessage
-import com.aallam.openai.api.model.ModelId
-import com.aallam.openai.client.OpenAI
+import meetnote.openai.ChatCompletionRequest
+import meetnote.openai.Message
 import meetnote.openai.OpenAICustomizedClient
 import org.slf4j.LoggerFactory
 import java.io.InputStreamReader
@@ -17,7 +14,6 @@ import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 class PostProcessor(
-    private val openAI: OpenAI,
     private val openAICustomizedClient: OpenAICustomizedClient,
     private val mp3bitRate: Int
 ) {
@@ -88,10 +84,12 @@ class PostProcessor(
     private suspend fun summarize(txtFilePath: Path) {
         state = "Summarizing..."
 
+        logger.info("Summarizing $txtFilePath")
+
         val mdPath = txtFilePath.resolveSibling("${txtFilePath.fileName.toString().dropLast(4)}.md")
         val chatMessages = listOf(
-            chatMessage {
-                role = ChatRole.System
+            Message(
+                role = "system",
                 content = """
                             Please summarize the main discussions and conclusions of this
                              meeting and organize the result in Markdown format. Specifically,
@@ -100,17 +98,17 @@ class PostProcessor(
                                 the content easily comprehensible for later review.
                            Output text must be in Japanese.
                         """.trimIndent()
-            },
-            chatMessage {
-                role = ChatRole.User
+            ),
+            Message(
+                role = "user",
                 content = txtFilePath.readText()
-            }
+            )
         )
-        val resp = openAI.chatCompletion(
-            chatCompletionRequest {
-                model = ModelId("gpt-4-32k")
-                messages = chatMessages
-            }
+        val resp = openAICustomizedClient.chatCompletion(
+            ChatCompletionRequest(
+                "gpt-4-32k",
+                chatMessages
+            )
         )
         logger.info("Writing result to $mdPath")
         mdPath.writeText(resp.choices[0].message.content!!)

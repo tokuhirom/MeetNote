@@ -9,7 +9,6 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.application
-import com.aallam.openai.client.OpenAI
 import kotlinx.coroutines.runBlocking
 import meetnote.config.ConfigRepository
 import meetnote.openai.OpenAICustomizedClient
@@ -29,7 +28,7 @@ fun main() {
     val config = configRepository.loadSettings()
     val dataRepository = DataRepository()
     val openAICustomizedClient = OpenAICustomizedClient(config.apiToken!!)
-    val postProcessor = PostProcessor(OpenAI(config.apiToken!!), openAICustomizedClient, config.mp3bitRate)
+    val postProcessor = PostProcessor(openAICustomizedClient, config.mp3bitRate)
     val postProcessingResumer = PostProcessingResumer(dataRepository, postProcessor)
     postProcessingResumer.start()
     val postProcessExecutor = Executors.newSingleThreadExecutor()
