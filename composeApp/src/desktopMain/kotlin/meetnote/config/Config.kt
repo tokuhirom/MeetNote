@@ -1,7 +1,13 @@
 package meetnote.config
 
+import meetnote.recordercontroller.ProcessPattern
 import meetnote.recordercontroller.WindowPattern
 import java.time.Duration
+
+enum class RecorderControllerType {
+    PROCESS,
+    WINDOW_NAME
+}
 
 data class Config(
     var apiToken: String? = null,
@@ -10,7 +16,17 @@ data class Config(
 
     var mixer: String? = null,
 
+    var recorderControllerType: RecorderControllerType = RecorderControllerType.PROCESS,
+    var highCpuUsageConfig: HighCpuUsageConfig = HighCpuUsageConfig(),
     var windowWatchConfig: WindowWatchConfig = WindowWatchConfig(),
+)
+
+data class HighCpuUsageConfig(
+    var processPatterns: List<ProcessPattern> = listOf(
+        ProcessPattern("zoom.us", 8.0),
+        ProcessPattern("com.apple.WebKit.GPU", 1.0)
+    ),
+    var measureInterval: Int = 3
 )
 
 data class WindowWatchConfig(

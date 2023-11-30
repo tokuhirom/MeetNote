@@ -7,15 +7,16 @@ import java.io.InputStreamReader
 import java.time.Duration
 import java.util.*
 
+data class ProcessPattern(var processName: String, var cpuUsageThreshold: Double)
+
 class HighCpuUsageRecorderController(
     private val recorder: Recorder,
-    private val processName: String,
-    private val cpuUsageThreshold: Double,
+    private val processPatterns: List<ProcessPattern>,
     private val measureInterval: Int = 3,
-    private val maxRecordingDuration: Duration = Duration.ofMinutes(30),
+    private val maxRecordingDuration: Duration = Duration.ofMinutes(60),
 ) : RecorderController {
     private val logger = LoggerFactory.getLogger(javaClass)
-    private val cpuUsagesHistory: Queue<Double> = LinkedList()
+    private val cpuUsagesHistory: Queue<Boolean> = LinkedList()
 
     override fun start() {
         // 録音時間が規定時間を経過するか、Zoom ウィンドウが閉じるまで録音を続ける
@@ -52,28 +53,33 @@ class HighCpuUsageRecorderController(
 
     private fun shouldRecording(): Boolean {
         val cpuUsage = getCpuUsage()
-            ?: return false // process not found.
 
         // Continue recording if any of the recent measurements exceeds the threshold.
         if (cpuUsagesHistory.size >= measureInterval) {
             cpuUsagesHistory.remove()
         }
         cpuUsagesHistory.add(cpuUsage)
-        return cpuUsagesHistory.any { it > cpuUsageThreshold }
+        return cpuUsagesHistory.any { it }
     }
 
-    private fun getCpuUsage(): Double? {
+    private fun getCpuUsage(): Boolean {
         val processBuilder = ProcessBuilder("ps", "aux")
         val process = processBuilder.start()
         val reader = BufferedReader(InputStreamReader(process.inputStream))
         reader.useLines { lines ->
             lines.forEach { line ->
-                if (line.contains(processName)) {
-                    return line.split("\\s+".toRegex())[2].toDoubleOrNull()
+                processPatterns.forEach { processPattern ->
+                    if (line.contains(processPattern.processName)) {
+                        val usage = line.split("\\s+".toRegex())[2].toDoubleOrNull()
+                        if (usage != null && usage > processPattern.cpuUsageThreshold) {
+                            logger.info("${processPattern.processName} cpu usage is $usage. It's greater than ${processPattern.cpuUsageThreshold}")
+                            return true
+                        }
+                    }
                 }
             }
         }
 
-        return null
+        return false
     }
 }

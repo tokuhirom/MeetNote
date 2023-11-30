@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Divider
+import androidx.compose.material.RadioButton
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
@@ -26,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.rememberDialogState
 import meetnote.config.ConfigRepository
+import meetnote.config.RecorderControllerType
+import meetnote.recordercontroller.ProcessPattern
 import meetnote.recordercontroller.WindowPattern
 import org.slf4j.LoggerFactory
 import java.time.Duration
@@ -114,110 +117,221 @@ fun configurationDialog(configRepository: ConfigRepository, onClose: () -> Unit)
 
             Box(modifier = Modifier.padding(bottom = 10.dp).border(1.dp, Color.Gray)) {
                 Column(modifier = Modifier.padding(10.dp)) {
-                    Text("Window watcher configuration", fontSize = TextUnit(1.5f, TextUnitType.Em))
-
-                    var sleepIntervalIsError by remember { mutableStateOf(false) }
-
-                    TextField(
-                        value = config.windowWatchConfig.watchInterval.toSeconds().toString(),
-                        onValueChange = { value ->
-                            logger.info("Updating sleep Interval: $value")
-                            val longValue = value.toLongOrNull()
-                            if (longValue != null) {
-                                config = config.copy(
-                                    windowWatchConfig = config.windowWatchConfig.copy(
-                                        watchInterval = Duration.ofSeconds(longValue)
-                                    )
-                                )
-                                sleepIntervalIsError = false
-                            } else {
-                                sleepIntervalIsError = true
-                            }
-                        },
-                        isError = sleepIntervalIsError,
-                        label = { Text("Window watch Interval [sec])") }
-                    )
-
-                    Divider(modifier = Modifier.padding(top = 10.dp, bottom = 10.dp))
+                    Text("Recording controller", fontSize = TextUnit(1.5f, TextUnitType.Em))
 
                     Row {
-                        Text("Window watching rule")
+                        Text("Recording controller type")
+                        RadioButton(selected = config.recorderControllerType == RecorderControllerType.PROCESS, onClick = {
+                            config = config.copy(recorderControllerType = RecorderControllerType.PROCESS)
 
-                        Spacer(modifier = Modifier.weight(1f))
+                        })
+                        Text("Process' CPU usage (Default)")
 
-                        Button(
-                            onClick = {
-                                config = config.copy(
-                                    windowWatchConfig = config.windowWatchConfig.copy(
-                                        windowPatterns = config.windowWatchConfig.windowPatterns +
-                                                WindowPattern("com.example", "Great new window")
-                                    )
-                                )
-                            },
-                        ) {
-                            Text("Add")
-                        }
+                        Spacer(modifier = Modifier.width(15.dp))
+
+                        RadioButton(selected = config.recorderControllerType == RecorderControllerType.WINDOW_NAME, onClick = {
+                            config = config.copy(recorderControllerType = RecorderControllerType.WINDOW_NAME)
+                        })
+                        Text("Window name (Experimental)")
                     }
 
-                    Box(modifier = Modifier.padding(top = 10.dp)) {
-                        LazyColumn {
-                            items(config.windowWatchConfig.windowPatterns) { windowNamePattern ->
-                                Row {
-                                    TextField(
-                                        value = windowNamePattern.bundleId,
-                                        onValueChange = {value ->
-                                            config = config.copy(
-                                                windowWatchConfig = config.windowWatchConfig.copy(
-                                                    windowPatterns = config.windowWatchConfig.windowPatterns.map {
-                                                        if (it == windowNamePattern) {
-                                                            it.copy(bundleId = value)
-                                                        } else {
-                                                            it
-                                                        }
-                                                    }
-                                                )
+                    Divider()
+
+                    when (config.recorderControllerType) {
+                        RecorderControllerType.PROCESS -> {
+                            Row {
+                                Text("Process watching rule")
+
+                                Spacer(modifier = Modifier.weight(1f))
+
+                                Button(
+                                    onClick = {
+                                        config = config.copy(
+                                            highCpuUsageConfig = config.highCpuUsageConfig.copy(
+                                                processPatterns = config.highCpuUsageConfig.processPatterns +
+                                                        ProcessPattern("zoom.us", 8.0)
                                             )
-                                        },
-                                        label = { Text("Bundle ID") },
-                                        modifier = Modifier.weight(1f, fill = false)
-                                    )
-
-                                    Spacer(modifier = Modifier.width(10.dp))
-
-                                    TextField(
-                                        value = windowNamePattern.windowName,
-                                        onValueChange = {value ->
-                                            config = config.copy(
-                                                windowWatchConfig = config.windowWatchConfig.copy(
-                                                    windowPatterns = config.windowWatchConfig.windowPatterns.map {
-                                                        if (it == windowNamePattern) {
-                                                            it.copy(windowName = value)
-                                                        } else {
-                                                            it
-                                                        }
-                                                    }
-                                                )
+                                        )
+                                    },
+                                ) {
+                                    Text("Add")
+                                }
+                            }
+                            Box(modifier = Modifier.padding(top = 10.dp)) {
+                                LazyColumn {
+                                    items(config.highCpuUsageConfig.processPatterns) { processPattern ->
+                                        Row {
+                                            TextField(
+                                                value = processPattern.processName,
+                                                onValueChange = {value ->
+                                                    config = config.copy(
+                                                        highCpuUsageConfig = config.highCpuUsageConfig.copy(
+                                                            processPatterns = config.highCpuUsageConfig.processPatterns.map {
+                                                                if (it == processPattern) {
+                                                                    it.copy(processName = value)
+                                                                } else {
+                                                                    it
+                                                                }
+                                                            }
+                                                        )
+                                                    )
+                                                },
+                                                label = { Text("Process name") },
+                                                modifier = Modifier.weight(1f, fill = false)
                                             )
-                                        },
-                                        label = { Text("Window Name") },
-                                        modifier = Modifier.weight(1f, fill = false)
-                                    )
 
-                                    Spacer(modifier = Modifier.width(10.dp))
+                                            Spacer(modifier = Modifier.width(10.dp))
 
-                                    Button(
-                                        onClick = {
-                                            config = config.copy(
-                                                windowWatchConfig = config.windowWatchConfig.copy(
-                                                    windowPatterns = config.windowWatchConfig.windowPatterns.filterNot {
-                                                        it == windowNamePattern
+                                            TextField(
+                                                value = processPattern.cpuUsageThreshold.toString(),
+                                                onValueChange = {value ->
+                                                    val dvalue = value.toDoubleOrNull()
+                                                    if (dvalue != null) {
+                                                        config = config.copy(
+                                                            highCpuUsageConfig = config.highCpuUsageConfig.copy(
+                                                                processPatterns = config.highCpuUsageConfig.processPatterns.map {
+                                                                    if (it == processPattern) {
+                                                                        it.copy(cpuUsageThreshold = dvalue)
+                                                                    } else {
+                                                                        it
+                                                                    }
+                                                                }
+                                                            )
+                                                        )
                                                     }
-                                                )
+                                                },
+                                                label = { Text("CPU usage threshold") },
+                                                modifier = Modifier.weight(1f, fill = false)
                                             )
-                                        },
-                                        colors = ButtonDefaults.buttonColors(backgroundColor = Color.Red)
-                                    ) {
-                                        Text("Delete")
+
+                                            Spacer(modifier = Modifier.width(10.dp))
+
+                                            Button(
+                                                onClick = {
+                                                    config = config.copy(
+                                                        highCpuUsageConfig = config.highCpuUsageConfig.copy(
+                                                            processPatterns = config.highCpuUsageConfig.processPatterns.filterNot {
+                                                                it == processPattern
+                                                            }
+                                                        )
+                                                    )
+                                                },
+                                                colors = ButtonDefaults.buttonColors(backgroundColor = Color.Red)
+                                            ) {
+                                                Text("Delete")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        RecorderControllerType.WINDOW_NAME -> {
+                            Text("Window watcher configuration", fontSize = TextUnit(1.5f, TextUnitType.Em))
+
+                            var sleepIntervalIsError by remember { mutableStateOf(false) }
+
+                            TextField(
+                                value = config.windowWatchConfig.watchInterval.toSeconds().toString(),
+                                onValueChange = { value ->
+                                    logger.info("Updating sleep Interval: $value")
+                                    val longValue = value.toLongOrNull()
+                                    if (longValue != null) {
+                                        config = config.copy(
+                                            windowWatchConfig = config.windowWatchConfig.copy(
+                                                watchInterval = Duration.ofSeconds(longValue)
+                                            )
+                                        )
+                                        sleepIntervalIsError = false
+                                    } else {
+                                        sleepIntervalIsError = true
+                                    }
+                                },
+                                isError = sleepIntervalIsError,
+                                label = { Text("Window watch Interval [sec])") }
+                            )
+
+                            Divider(modifier = Modifier.padding(top = 10.dp, bottom = 10.dp))
+
+                            Row {
+                                Text("Window watching rule")
+
+                                Spacer(modifier = Modifier.weight(1f))
+
+                                Button(
+                                    onClick = {
+                                        config = config.copy(
+                                            windowWatchConfig = config.windowWatchConfig.copy(
+                                                windowPatterns = config.windowWatchConfig.windowPatterns +
+                                                        WindowPattern("com.example", "Great new window")
+                                            )
+                                        )
+                                    },
+                                ) {
+                                    Text("Add")
+                                }
+                            }
+
+                            Box(modifier = Modifier.padding(top = 10.dp)) {
+                                LazyColumn {
+                                    items(config.windowWatchConfig.windowPatterns) { windowNamePattern ->
+                                        Row {
+                                            TextField(
+                                                value = windowNamePattern.bundleId,
+                                                onValueChange = {value ->
+                                                    config = config.copy(
+                                                        windowWatchConfig = config.windowWatchConfig.copy(
+                                                            windowPatterns = config.windowWatchConfig.windowPatterns.map {
+                                                                if (it == windowNamePattern) {
+                                                                    it.copy(bundleId = value)
+                                                                } else {
+                                                                    it
+                                                                }
+                                                            }
+                                                        )
+                                                    )
+                                                },
+                                                label = { Text("Bundle ID") },
+                                                modifier = Modifier.weight(1f, fill = false)
+                                            )
+
+                                            Spacer(modifier = Modifier.width(10.dp))
+
+                                            TextField(
+                                                value = windowNamePattern.windowName,
+                                                onValueChange = {value ->
+                                                    config = config.copy(
+                                                        windowWatchConfig = config.windowWatchConfig.copy(
+                                                            windowPatterns = config.windowWatchConfig.windowPatterns.map {
+                                                                if (it == windowNamePattern) {
+                                                                    it.copy(windowName = value)
+                                                                } else {
+                                                                    it
+                                                                }
+                                                            }
+                                                        )
+                                                    )
+                                                },
+                                                label = { Text("Window Name") },
+                                                modifier = Modifier.weight(1f, fill = false)
+                                            )
+
+                                            Spacer(modifier = Modifier.width(10.dp))
+
+                                            Button(
+                                                onClick = {
+                                                    config = config.copy(
+                                                        windowWatchConfig = config.windowWatchConfig.copy(
+                                                            windowPatterns = config.windowWatchConfig.windowPatterns.filterNot {
+                                                                it == windowNamePattern
+                                                            }
+                                                        )
+                                                    )
+                                                },
+                                                colors = ButtonDefaults.buttonColors(backgroundColor = Color.Red)
+                                            ) {
+                                                Text("Delete")
+                                            }
+                                        }
                                     }
                                 }
                             }

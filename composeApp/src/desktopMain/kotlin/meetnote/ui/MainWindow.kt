@@ -42,8 +42,10 @@ import meetnote.Recorder
 import meetnote.WindowNameCollector
 import meetnote.config.Config
 import meetnote.config.ConfigRepository
+import meetnote.config.RecorderControllerType
 import meetnote.deleteFileWithSameNameVtt
 import meetnote.postprocess.PostProcessor
+import meetnote.recordercontroller.HighCpuUsageRecorderController
 import meetnote.recordercontroller.WindowNameRecorderController
 import meetnote.startFileWatcher
 import org.slf4j.Logger
@@ -73,13 +75,25 @@ fun ApplicationScope.mainWindow(
             Thread {
                 logger.info("Starting WindowNameRecorderController...")
 
-                WindowNameRecorderController(
-                    recorder,
-                    windowNameCollector,
-                    config.windowWatchConfig.windowPatterns,
-                    watchInterval = config.windowWatchConfig.watchInterval,
-                    maxRecordingDuration = config.maxRecordingDuration,
-                ).start()
+                when (config.recorderControllerType) {
+                    RecorderControllerType.PROCESS -> {
+                        HighCpuUsageRecorderController(
+                            recorder,
+                            config.highCpuUsageConfig.processPatterns,
+                            config.highCpuUsageConfig.measureInterval,
+                            config.maxRecordingDuration,
+                        ).start()
+                    }
+                    RecorderControllerType.WINDOW_NAME -> {
+                        WindowNameRecorderController(
+                            recorder,
+                            windowNameCollector,
+                            config.windowWatchConfig.windowPatterns,
+                            watchInterval = config.windowWatchConfig.watchInterval,
+                            maxRecordingDuration = config.maxRecordingDuration,
+                        ).start()
+                    }
+                }
             }.start()
         }
 
