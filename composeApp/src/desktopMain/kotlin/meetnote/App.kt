@@ -206,245 +206,249 @@ class MainApp(private val dataRepository: DataRepository) {
             }
         }
     }
+}
 
-    @OptIn(ExperimentalFoundationApi::class)
-    @Composable
-    private fun vttWindow(log: LogEntry, onHideWindow: () -> Unit) {
-        val vttPath = log.path.resolveSibling(log.path.name.replace(".md", ".vtt"))
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun vttWindow(log: LogEntry, onHideWindow: () -> Unit) {
+    val logger = LoggerFactory.getLogger("vttWindow")
+    val vttPath = log.path.resolveSibling(log.path.name.replace(".md", ".vtt"))
 
-        Window(
-            onCloseRequest = { onHideWindow() },
-            title = "Viewing ${log.title()}(VTT)"
-        ) {
-            Column {
-                val tmpFile = Files.createTempFile("meetnote", ".mp3")
-                var audioInputStream: AudioInputStream? by remember { mutableStateOf(null) }
-                var clip: Clip? by remember { mutableStateOf(null) }
-                var playing by remember { mutableStateOf(false) }
-                var seekToMicroSecond: Long? by remember { mutableStateOf(null) }
-                var currentPosition: String? by remember { mutableStateOf(null) }
-                val hasMp3File = log.mp3Path().exists()
+    Window(
+        onCloseRequest = { onHideWindow() },
+        title = "Viewing ${log.title()}(VTT)"
+    ) {
+        Column {
+            val tmpFile = Files.createTempFile("meetnote", ".mp3")
+            var audioInputStream: AudioInputStream? by remember { mutableStateOf(null) }
+            var clip: Clip? by remember { mutableStateOf(null) }
+            var playing by remember { mutableStateOf(false) }
+            var seekToMicroSecond: Long? by remember { mutableStateOf(null) }
+            var currentPosition: String? by remember { mutableStateOf(null) }
+            val hasMp3File = log.mp3Path().exists()
 
-                LaunchedEffect(playing, seekToMicroSecond) {
-                    if (playing) {
-                        while (clip == null) {
-                            logger.info("Waiting clip to ready")
-                            delay(1000)
-                        }
-                        clip?.microsecondPosition = seekToMicroSecond ?: 0
-                        clip?.stop()
-                        clip?.start()
-                    } else {
-                        val p = clip?.microsecondPosition
-                        if (p != null && p != seekToMicroSecond) {
-                            seekToMicroSecond = p
-                        }
-                        clip?.stop()
-                    }
-                }
-
-                LaunchedEffect(Unit) {
-                    if (clip == null) {
-                        val mp3Path = log.mp3Path()
-
-                        logger.info("Converting $mp3Path to wave file")
-                        val processBuilder = ProcessBuilder(
-                            "lame",
-                            "--quiet",
-                            "--decode",
-                            mp3Path.toAbsolutePath().toString(),
-                            tmpFile.toAbsolutePath().toString(),
-                        )
-                        processBuilder.redirectError()
-                        val process = processBuilder.start()
-                        val mpg123log = String(process.inputStream.readAllBytes())
-                        val exitCode = process.waitFor()
-                        if (exitCode != 0) {
-                            logger.error("Cannot convert mp3 to wave file: $mpg123log")
-                        } else {
-                            logger.info("Converted $mp3Path to $tmpFile")
-                        }
-
-                        audioInputStream = AudioSystem.getAudioInputStream(tmpFile.toFile())
-                        clip =
-                            AudioSystem.getLine(DataLine.Info(Clip::class.java, audioInputStream!!.format)) as Clip
-                        clip!!.open(audioInputStream)
-                    }
-                }
-                LaunchedEffect(Unit) {
-                    while (true) {
-                        val p = clip?.microsecondPosition
-                        currentPosition = if (p != null) {
-                            LocalTime.ofNanoOfDay(p * 1000).toString()
-                        } else {
-                            null
-                        }
+            LaunchedEffect(playing, seekToMicroSecond) {
+                if (playing) {
+                    while (clip == null) {
+                        logger.info("Waiting clip to ready")
                         delay(1000)
                     }
-                }
-
-                DisposableEffect(Unit) {
-                    onDispose {
-                        audioInputStream?.close()
-                        tmpFile.deleteIfExists()
+                    clip?.microsecondPosition = seekToMicroSecond ?: 0
+                    clip?.stop()
+                    clip?.start()
+                } else {
+                    val p = clip?.microsecondPosition
+                    if (p != null && p != seekToMicroSecond) {
+                        seekToMicroSecond = p
                     }
+                    clip?.stop()
                 }
+            }
 
-                if (hasMp3File) {
-                    Row {
-                        Button(onClick = {
-                            playing = !playing
-                        }) {
-                            Text(if (playing) {
-                                "⏸"
-                            } else {
-                                "▶"
+            LaunchedEffect(Unit) {
+                if (clip == null) {
+                    val mp3Path = log.mp3Path()
+
+                    logger.info("Converting $mp3Path to wave file")
+                    val processBuilder = ProcessBuilder(
+                        "lame",
+                        "--quiet",
+                        "--decode",
+                        mp3Path.toAbsolutePath().toString(),
+                        tmpFile.toAbsolutePath().toString(),
+                    )
+                    processBuilder.redirectError()
+                    val process = processBuilder.start()
+                    val mpg123log = String(process.inputStream.readAllBytes())
+                    val exitCode = process.waitFor()
+                    if (exitCode != 0) {
+                        logger.error("Cannot convert mp3 to wave file: $mpg123log")
+                    } else {
+                        logger.info("Converted $mp3Path to $tmpFile")
+                    }
+
+                    audioInputStream = AudioSystem.getAudioInputStream(tmpFile.toFile())
+                    clip =
+                        AudioSystem.getLine(DataLine.Info(Clip::class.java, audioInputStream!!.format)) as Clip
+                    clip!!.open(audioInputStream)
+                }
+            }
+            LaunchedEffect(Unit) {
+                while (true) {
+                    val p = clip?.microsecondPosition
+                    currentPosition = if (p != null) {
+                        LocalTime.ofNanoOfDay(p * 1000).toString()
+                    } else {
+                        null
+                    }
+                    delay(1000)
+                }
+            }
+
+            DisposableEffect(Unit) {
+                onDispose {
+                    audioInputStream?.close()
+                    tmpFile.deleteIfExists()
+                }
+            }
+
+            if (hasMp3File) {
+                Row {
+                    Button(onClick = {
+                        playing = !playing
+                    }) {
+                        Text(if (playing) {
+                            "⏸"
+                        } else {
+                            "▶"
+                        })
+                    }
+
+                    Text(currentPosition ?: "")
+                }
+            }
+
+            LazyColumn {
+                val content = compactionWebVtt(parseWebVtt(vttPath.readText()))
+                items(content) { row ->
+                    Row(modifier = Modifier.padding(4.dp)) {
+                        if (hasMp3File) {
+                            Text("▶", modifier = Modifier.onClick {
+                                seekToMicroSecond = (row.start.toSecondOfDay() * 1000 * 1000).toLong()
+                                playing = true
                             })
                         }
 
-                        Text(currentPosition ?: "")
-                    }
-                }
-
-                LazyColumn {
-                    val content = compactionWebVtt(parseWebVtt(vttPath.readText()))
-                    items(content) { row ->
-                        Row(modifier = Modifier.padding(4.dp)) {
-                            if (hasMp3File) {
-                                Text("▶", modifier = Modifier.onClick {
-                                    seekToMicroSecond = (row.start.toSecondOfDay() * 1000 * 1000).toLong()
-                                    playing = true
-                                })
-                            }
-
-                            SelectionContainer {
-                                Text(
-                                    row.start.format(DateTimeFormatter.ISO_TIME)
-                                            + " " + row.end.format(DateTimeFormatter.ISO_TIME)
-                                            + " " + row.content,
-                                )
-                            }
+                        SelectionContainer {
+                            Text(
+                                row.start.format(DateTimeFormatter.ISO_TIME)
+                                        + " " + row.end.format(DateTimeFormatter.ISO_TIME)
+                                        + " " + row.content,
+                            )
                         }
                     }
                 }
             }
+        }
 
+        MenuBar {
+            this.Menu("File") {
+                Item("Close", shortcut = KeyShortcut(Key.W, meta = true), onClick = {
+                    onHideWindow()
+                })
+            }
+        }
+    }
+}
+
+@Composable
+fun editSummaryWindow(
+    log: LogEntry,
+    onHideWindow: () -> Unit,
+) {
+    val logger = LoggerFactory.getLogger("editSummaryWindow")
+
+    var showConfirmDialog by remember { mutableStateOf(false) }
+
+    var content by remember { mutableStateOf(log.content) }
+    var isDirty by remember { mutableStateOf(false) }
+    fun saveContent() {
+        log.path.writeText(content)
+        isDirty = false
+        log.content = content
+    }
+
+    Window(
+        onCloseRequest = { },
+        title = "Editing ${log.title()}" + if (isDirty) {
+            " (Editing)"
+        } else {
+            ""
+        },
+        content = {
+            TextField(
+                value = content,
+                onValueChange = {
+                    logger.info("onValueChange: $it")
+                    content = it
+                    isDirty = true
+                },
+                modifier = Modifier.fillMaxWidth().fillMaxHeight()
+            )
             MenuBar {
                 this.Menu("File") {
+                    Item("Save", shortcut = KeyShortcut(Key.S, meta = true), onClick = {
+                        logger.info("Saving ${log.path}")
+                        saveContent()
+                    })
                     Item("Close", shortcut = KeyShortcut(Key.W, meta = true), onClick = {
-                        onHideWindow()
+                        if (isDirty) {
+                            // Show "really close this window?" dialog
+                            showConfirmDialog = true
+                        } else {
+                            onHideWindow()
+                        }
                     })
                 }
             }
-        }
-    }
-
-    @Composable
-    private fun editSummaryWindow(
-        log: LogEntry,
-        onHideWindow: () -> Unit,
-    ) {
-        var showConfirmDialog by remember { mutableStateOf(false) }
-
-        var content by remember { mutableStateOf(log.content) }
-        var isDirty by remember { mutableStateOf(false) }
-        fun saveContent() {
-            log.path.writeText(content)
-            isDirty = false
-            log.content = content
-        }
-
-        Window(
-            onCloseRequest = { },
-            title = "Editing ${log.title()}" + if (isDirty) {
-                " (Editing)"
-            } else {
-                ""
-            },
-            content = {
-                TextField(
-                    value = content,
-                    onValueChange = {
-                        logger.info("onValueChange: $it")
-                        content = it
-                        isDirty = true
-                    },
-                    modifier = Modifier.fillMaxWidth().fillMaxHeight()
-                )
-                MenuBar {
-                    this.Menu("File") {
-                        Item("Save", shortcut = KeyShortcut(Key.S, meta = true), onClick = {
-                            logger.info("Saving ${log.path}")
-                            saveContent()
-                        })
-                        Item("Close", shortcut = KeyShortcut(Key.W, meta = true), onClick = {
-                            if (isDirty) {
-                                // Show "really close this window?" dialog
-                                showConfirmDialog = true
-                            } else {
-                                onHideWindow()
+            if (showConfirmDialog) {
+                Dialog(onDismissRequest = { showConfirmDialog = false }) {
+                    Column(modifier = Modifier.background(Color.LightGray)) {
+                        Text(text = "Really close the editing window？", modifier = Modifier.padding(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(8.dp),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            Button(onClick = { showConfirmDialog = false; }) {
+                                Text("Cancel")
                             }
-                        })
-                    }
-                }
-                if (showConfirmDialog) {
-                    Dialog(onDismissRequest = { showConfirmDialog = false }) {
-                        Column(modifier = Modifier.background(Color.LightGray)) {
-                            Text(text = "Really close the editing window？", modifier = Modifier.padding(8.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(8.dp),
-                                horizontalArrangement = Arrangement.End
-                            ) {
-                                Button(onClick = { showConfirmDialog = false; }) {
-                                    Text("Cancel")
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Button(onClick = {
-                                    showConfirmDialog = false
-                                    saveContent()
-                                    onHideWindow()
-                                }) {
-                                    Text("Save and Close")
-                                }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Button(onClick = {
+                                showConfirmDialog = false
+                                saveContent()
+                                onHideWindow()
+                            }) {
+                                Text("Save and Close")
                             }
                         }
                     }
                 }
             }
-        )
-    }
+        }
+    )
+}
 
-    private fun deleteFileWithSameNameVtt(file: File) {
-        val vttFilePath = file.absolutePath.replace(".md", ".vtt")
-        val vttFile = Paths.get(vttFilePath)
-        vttFile.deleteIfExists()
-        file.delete()
-    }
+fun deleteFileWithSameNameVtt(file: File) {
+    val vttFilePath = file.absolutePath.replace(".md", ".vtt")
+    val vttFile = Paths.get(vttFilePath)
+    vttFile.deleteIfExists()
+    file.delete()
+}
 
-    private fun startFileWatcher(path: Path, callback: () -> Unit) {
-        val watchService = FileSystems.getDefault().newWatchService()
+fun startFileWatcher(path: Path, callback: () -> Unit) {
+    val logger = LoggerFactory.getLogger("startFileWatcher")
+    val watchService = FileSystems.getDefault().newWatchService()
 
-        path.register(
-            watchService,
-            StandardWatchEventKinds.ENTRY_CREATE,
-            StandardWatchEventKinds.ENTRY_MODIFY,
-            StandardWatchEventKinds.ENTRY_DELETE
-        )
+    path.register(
+        watchService,
+        StandardWatchEventKinds.ENTRY_CREATE,
+        StandardWatchEventKinds.ENTRY_MODIFY,
+        StandardWatchEventKinds.ENTRY_DELETE
+    )
 
-        Thread {
-            logger.info("Starting file watching thread...: $path")
+    Thread {
+        logger.info("Starting file watching thread...: $path")
 
-            while (true) {
-                val key = watchService.take()
-                logger.info("Got watch event.")
-                val events = key.pollEvents()
-                for (event in events) {
-                    logger.info("Event: context=${event.context()}")
-                    callback()
-                    break
-                }
-                key.reset()
+        while (true) {
+            val key = watchService.take()
+            logger.info("Got watch event.")
+            val events = key.pollEvents()
+            for (event in events) {
+                logger.info("Event: context=${event.context()}")
+                callback()
+                break
             }
-        }.start()
-    }
+            key.reset()
+        }
+    }.start()
 }
