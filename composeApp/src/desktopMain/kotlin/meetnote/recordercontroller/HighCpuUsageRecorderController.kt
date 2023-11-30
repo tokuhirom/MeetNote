@@ -72,7 +72,7 @@ class HighCpuUsageRecorderController(
                     if (line.contains(processPattern.processName)) {
                         val usage = line.split("\\s+".toRegex())[2].toDoubleOrNull()
                         if (usage != null && usage > processPattern.cpuUsageThreshold) {
-                            logger.info("${processPattern.processName} cpu usage is $usage. It's greater than ${processPattern.cpuUsageThreshold}")
+                            logger.debug("${processPattern.processName} cpu usage is $usage. It's greater than ${processPattern.cpuUsageThreshold}")
                             return true
                         }
                     }
