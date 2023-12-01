@@ -21,6 +21,8 @@ import meetnote.ui.mainWindow
 import org.slf4j.LoggerFactory
 import java.util.concurrent.Executors
 import javax.sound.sampled.AudioSystem
+import kotlin.math.max
+import kotlin.math.min
 
 fun main() {
     val logger = LoggerFactory.getLogger("main")
@@ -120,7 +122,7 @@ class TrayIcon(
     override fun DrawScope.onDraw() {
         if (isRecording) {
             // 20db のときを 20%, 100db のときを 100% になるように調整してみる。
-            val heightPercent = (currentVolume ?: 0) / 100.0f * intrinsicSize.height
+            val heightPercent = max(min(currentVolume ?: 0, 100), 0) / 100.0f * intrinsicSize.height
             println("current=$currentVolume, hp=$heightPercent")
             drawRect(
                 color = Color.Green,

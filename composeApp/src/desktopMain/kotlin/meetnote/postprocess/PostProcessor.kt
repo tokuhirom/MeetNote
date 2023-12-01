@@ -115,6 +115,7 @@ class PostProcessor(
                                by the content in bullet point format. The purpose is to make
                                 the content easily comprehensible for later review.
                            Output text must be in Japanese.
+                           If the content doesn't contain any meaningful discussion, just output `NO_CONTENT`.
                         """.trimIndent()
             ),
             Message(
