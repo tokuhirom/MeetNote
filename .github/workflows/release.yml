@@ -26,6 +26,6 @@ jobs:
         run: ./gradlew -Prelease=${{ github.event.release.tag_name }} packageDmg
 
       - name: Upload Release Asset
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: composeApp/build/compose/binaries/main/dmg/MeetNote-${{ github.event.release.tag_name }}.dmg
