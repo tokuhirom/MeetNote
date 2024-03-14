@@ -30,7 +30,7 @@ kotlin {
             implementation("ch.qos.logback:logback-classic:1.5.3")
             implementation("org.slf4j:slf4j-api:2.0.12")
             implementation("com.aallam.ktoken:ktoken:0.3.0")
-            implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.2")
+            implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.0")
 
             val ktorVersion = "2.3.9"
             implementation("io.ktor:ktor-client-core:$ktorVersion")
