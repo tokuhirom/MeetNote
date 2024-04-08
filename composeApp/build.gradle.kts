@@ -32,7 +32,7 @@ kotlin {
             implementation("com.aallam.ktoken:ktoken:0.3.0")
             implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.0")
 
-            val ktorVersion = "2.3.9"
+            val ktorVersion = "2.3.10"
             implementation("io.ktor:ktor-client-core:$ktorVersion")
             implementation("io.ktor:ktor-client-cio:$ktorVersion")
             implementation("io.ktor:ktor-client-serialization:$ktorVersion")
