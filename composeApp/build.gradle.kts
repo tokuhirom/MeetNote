@@ -28,7 +28,7 @@ kotlin {
             @OptIn(ExperimentalComposeLibrary::class)
             implementation(compose.components.resources)
             implementation("ch.qos.logback:logback-classic:1.5.4")
-            implementation("org.slf4j:slf4j-api:2.0.12")
+            implementation("org.slf4j:slf4j-api:2.0.13")
             implementation("com.aallam.ktoken:ktoken:0.3.0")
             implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.0")
 
