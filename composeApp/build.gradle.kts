@@ -19,7 +19,7 @@ kotlin {
         }
         desktopTest.dependencies {
             implementation("org.junit.jupiter:junit-jupiter:5.10.2")
-            implementation("com.willowtreeapps.assertk:assertk:0.28.0")
+            implementation("com.willowtreeapps.assertk:assertk:0.28.1")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
