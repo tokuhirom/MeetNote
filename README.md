@@ -1,3 +1,7 @@
+> [!WARNING]
+> This app was written in Compose... But it means, this app eats tons of memory. As a result, I fully rewrote this app in tauri/rust. See https://github.com/tokuhirom/meetnote2
+
+
 # MeetNote
 
 ![MeetNote](icon.png)
